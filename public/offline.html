@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You are Offline — CoachPro</title>
+  <style>
+    :root {
+      --primary: #1E3A8A;
+      --secondary: #F97316;
+      --bg: #F8FAFC;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #1E3A8A 0%, #1e4db5 50%, #1E3A8A 100%);
+      min-h: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #334155;
+    }
+    .card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      width: 100%;
+      max-width: 440px;
+      padding: 32px;
+      text-align: center;
+    }
+    .logo-container {
+      margin-bottom: 24px;
+    }
+    .logo {
+      height: 64px;
+      object-fit: contain;
+      background: white;
+      border-radius: 12px;
+      padding: 4px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .last-sync {
+      background: #f1f5f9;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #475569;
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+    .btn-retry {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s ease;
+      box-shadow: 0 4px 6px -1px rgb(249 115 22 / 0.2);
+    }
+    .btn-retry:hover {
+      background: #ea580c;
+    }
+    .features-list {
+      text-align: left;
+      margin-top: 28px;
+      border-t: 1px solid #e2e8f0;
+      padding-top: 20px;
+    }
+    .features-list h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .feature-item.yes {
+      color: #15803d;
+    }
+    .feature-item.no {
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+    .icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-container">
+      <img src="/logo.png" alt="CoachPro Logo" class="logo">
+    </div>
+    
+    <h1>You are offline</h1>
+    <p class="subtitle">Please check your internet connection. Some features are unavailable offline.</p>
+    
+    <div class="last-sync">
+      Last synced: <span id="sync-time">Checking...</span>
+    </div>
+    
+    <button class="btn-retry" onclick="retryConnection()">
+      Try Reconnecting
+    </button>
+    
+    <div class="features-list">
+      <h3>Offline Access Overview</h3>
+      <div class="feature-item yes">
+        <span class="icon">✓</span> View cached student list
+      </div>
+      <div class="feature-item yes">
+        <span class="icon">✓</span> Mark attendance (saves locally)
+      </div>
+      <div class="feature-item yes">
+        <span class="icon">✓</span> View today's schedule
+      </div>
+      <div class="feature-item no">
+        <span class="icon">✗</span> Fee collection (requires internet)
+      </div>
+      <div class="feature-item no">
+        <span class="icon">✗</span> WhatsApp alerts (requires internet)
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load last sync timestamp
+    const lastSync = localStorage.getItem('coachpro_last_sync');
+    document.getElementById('sync-time').textContent = lastSync || 'Never';
+
+    // Retry checking connection
+    function retryConnection() {
+      if (navigator.onLine) {
+        window.location.reload();
+      } else {
+        const btn = document.querySelector('.btn-retry');
+        btn.textContent = 'Still Offline 📴';
+        setTimeout(() => {
+          btn.textContent = 'Try Reconnecting';
+        }, 1500);
+      }
+    }
+
+    // Auto-refresh when online status restored
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>
