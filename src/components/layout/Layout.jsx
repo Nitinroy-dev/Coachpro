@@ -13,7 +13,7 @@ import {
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [moreSheetOpen, setMoreSheetOpen] = useState(false)
-  const { user, profile, institute, signOut } = useAuth()
+  const { user, profile, institute, signOut, showInstallBtn, handleInstall } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -172,7 +172,18 @@ export default function Layout() {
                 ))}
               </div>
 
-              <div className="pt-2 border-t border-gray-100">
+              <div className="pt-2 border-t border-gray-100 space-y-2">
+                {showInstallBtn && (
+                  <button
+                    onClick={() => {
+                      setMoreSheetOpen(false)
+                      handleInstall()
+                    }}
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors cursor-pointer"
+                  >
+                    📲 Install CoachPro App
+                  </button>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-red-50 text-red-600 font-medium text-sm hover:bg-red-100 transition-colors"
