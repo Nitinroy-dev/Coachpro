@@ -34,16 +34,52 @@ export default function StudentForm({ student, batches = [], onClose, onSaved })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name.trim()) {
+    
+    // 1. Sanitization: Strip HTML tags to prevent payload injection attempts
+    const sanitize = (val) => val.replace(/<[^>]*>/g, '').trim()
+    
+    const cleanName = sanitize(form.name)
+    const cleanEmail = sanitize(form.email)
+    const cleanPhone = sanitize(form.phone)
+    const cleanParentName = sanitize(form.parent_name)
+    const cleanParentPhone = sanitize(form.parent_phone)
+    const cleanAddress = sanitize(form.address)
+
+    // 2. Input Validation Checks
+    if (!cleanName) {
       setError('Student name is required.')
       return
     }
+    if (cleanName.length > 80) {
+      setError('Student name cannot exceed 80 characters.')
+      return
+    }
+    if (cleanPhone && !/^\+?[0-9\s-]{10,15}$/.test(cleanPhone)) {
+      setError('Please enter a valid 10 to 15-digit phone number.')
+      return
+    }
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+    if (cleanParentPhone && !/^\+?[0-9\s-]{10,15}$/.test(cleanParentPhone)) {
+      setError('Please enter a valid 10 to 15-digit parent phone number.')
+      return
+    }
+
     setError('')
     setLoading(true)
 
     try {
       const payload = {
-        ...form,
+        name: cleanName,
+        phone: cleanPhone,
+        email: cleanEmail,
+        parent_name: cleanParentName,
+        parent_phone: cleanParentPhone,
+        dob: form.dob,
+        address: cleanAddress,
+        status: form.status,
         institute_id: profile?.institute_id,
         student_code: student?.student_code || generateCode(),
         batch_id: form.batch_id || null,
