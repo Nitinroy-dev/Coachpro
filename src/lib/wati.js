@@ -12,9 +12,12 @@ const WATI_ENDPOINT = import.meta.env.VITE_WATI_API_ENDPOINT
  * @param {string} message - Message text
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function sendWhatsAppMessage(phone, message) {
-  if (!WATI_TOKEN || !WATI_ENDPOINT) {
-    console.warn('Wati API not configured. Add VITE_WATI_API_TOKEN and VITE_WATI_API_ENDPOINT to .env.local')
+export async function sendWhatsAppMessage(phone, message, config = null) {
+  const token = config?.wati_api_token || WATI_TOKEN
+  const endpoint = config?.wati_api_endpoint || WATI_ENDPOINT
+
+  if (!token || !endpoint) {
+    console.warn('Wati API not configured.')
     return { success: false, error: 'Wati API not configured' }
   }
 

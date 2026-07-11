@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CreditCard, Plus, Search, Upload, MessageSquare, Send, Calendar, Filter, Download,
   TrendingUp, AlertCircle, Clock, CheckCircle2, DollarSign, BarChart3, FileSpreadsheet
@@ -22,6 +23,7 @@ import FeeReceipt from './FeeReceipt'
 export default function FeeList() {
   const { profile } = useAuth()
   const toast = useToast()
+  const navigate = useNavigate()
   const instituteId = profile?.institute_id
 
   const [activeTab, setActiveTab] = useState('transactions') // transactions | pending | partial | reports
@@ -92,7 +94,8 @@ export default function FeeList() {
     const rem = (inst.amount || 0) - (inst.paid_amount || 0)
     const dueDateStr = inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : 'soon'
     const msgText = buildMessage.feeDue(inst.students?.name || 'Student', rem.toLocaleString('en-IN'), dueDateStr, profile?.institutes?.name || 'CoachPro')
-    await sendWhatsAppMessage(phone, msgText)
+    const config = profile?.institutes?.settings || null
+    await sendWhatsAppMessage(phone, msgText, config)
     toast.success(`WhatsApp reminder sent to ${inst.students?.name}!`)
   }
 
@@ -102,13 +105,14 @@ export default function FeeList() {
     if (!window.confirm(`Send automated WhatsApp reminders to all ${overdueList.length} overdue students?`)) return
 
     let count = 0
+    const config = profile?.institutes?.settings || null
     for (const inst of overdueList) {
       const phone = inst.students?.phone || inst.students?.parent_phone
       if (phone) {
         const rem = (inst.amount || 0) - (inst.paid_amount || 0)
         const dueDateStr = inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : 'soon'
         const msgText = buildMessage.feeDue(inst.students?.name || 'Student', rem.toLocaleString('en-IN'), dueDateStr, profile?.institutes?.name || 'CoachPro')
-        await sendWhatsAppMessage(phone, msgText)
+        await sendWhatsAppMessage(phone, msgText, config)
         count++
       }
     }
