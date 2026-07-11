@@ -23,11 +23,22 @@ export default function FeeReceipt({ installment, onClose }) {
   const [totalOutstanding, setTotalOutstanding] = useState(null)
   const [loadingBalance, setLoadingBalance] = useState(true)
   const [paymentMode, setPaymentMode] = useState(installment?.payment_mode || null)
+  const [studentData, setStudentData] = useState(student || null)
 
   useEffect(() => {
     const fetchPending = async () => {
       const studentId = student?.id || installment?.student_id
       const instId = installment?.id
+
+      // Fetch full student with batch & course info
+      if (studentId) {
+        const { data: fullStudent } = await supabase
+          .from('students')
+          .select('id, name, phone, parent_name, parent_phone, student_code, batches(id, name, courses(id, name))')
+          .eq('id', studentId)
+          .maybeSingle()
+        if (fullStudent) setStudentData(fullStudent)
+      }
 
       // Fetch outstanding balance across all installments
       if (studentId) {
@@ -90,9 +101,9 @@ export default function FeeReceipt({ installment, onClose }) {
   }
 
   const handleWhatsAppShare = async () => {
-    const recipient = student?.parent_phone || student?.phone
+    const recipient = studentData?.parent_phone || studentData?.phone
     if (!recipient) { alert('Recipient phone missing!'); return }
-    const msg = `Dear ${student?.parent_name || student?.name}, payment receipt ${receiptNo} of Rs. ${paidNow.toLocaleString('en-IN')} has been recorded for ${student?.name}. Outstanding balance: Rs. ${remaining.toLocaleString('en-IN')}. Thank you! — ${institute?.name || 'CoachPro'}`
+    const msg = `Dear ${studentData?.parent_name || studentData?.name}, payment receipt ${receiptNo} of Rs. ${paidNow.toLocaleString('en-IN')} has been recorded for ${studentData?.name}. Outstanding balance: Rs. ${remaining.toLocaleString('en-IN')}. Thank you! — ${institute?.name || 'CoachPro'}`
     await sendWhatsAppMessage(recipient, msg)
     alert('Receipt sent via WhatsApp!')
   }
@@ -134,10 +145,10 @@ export default function FeeReceipt({ installment, onClose }) {
       startY: 68,
       head: [['Field', 'Details']],
       body: [
-        ['Student Name', student?.name || '—'],
-        ['Student ID', student?.student_code || '—'],
-        ['Batch', student?.batches?.name || '—'],
-        ['Course', student?.batches?.courses?.name || '—'],
+        ['Student Name', studentData?.name || '—'],
+        ['Student ID', studentData?.student_code || '—'],
+        ['Batch', studentData?.batches?.name || '—'],
+        ['Course', studentData?.batches?.courses?.name || '—'],
         ['Installment #', `Installment #${installment?.installment_number || '1'}`],
         ['Payment Mode', (paymentMode || 'cash').toUpperCase()],
         ['Total Installment Amount', `Rs. ${totalInstAmount.toLocaleString('en-IN')}`],
@@ -219,10 +230,10 @@ export default function FeeReceipt({ installment, onClose }) {
 
           {/* Student & Course Info */}
           <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 grid grid-cols-2 gap-3 text-xs">
-            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Student</span><span className="font-bold text-gray-900">{student?.name || '—'}</span></div>
-            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Student ID</span><span className="font-mono font-semibold text-[#1E3A8A]">{student?.student_code || '—'}</span></div>
-            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Batch</span><span className="font-medium text-gray-800">{student?.batches?.name || '—'}</span></div>
-            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Course</span><span className="font-medium text-[#F97316]">{student?.batches?.courses?.name || '—'}</span></div>
+            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Student</span><span className="font-bold text-gray-900">{studentData?.name || '—'}</span></div>
+            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Student ID</span><span className="font-mono font-semibold text-[#1E3A8A]">{studentData?.student_code || '—'}</span></div>
+            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Batch</span><span className="font-medium text-gray-800">{studentData?.batches?.name || '—'}</span></div>
+            <div><span className="text-gray-400 block font-bold text-[10px] uppercase">Course</span><span className="font-medium text-[#F97316]">{studentData?.batches?.courses?.name || '—'}</span></div>
           </div>
 
           {/* Payment breakdown */}
