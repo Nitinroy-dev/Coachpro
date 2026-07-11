@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, Building2, Phone, MapPin, Hash, Calendar, Settings as SettingsIcon, Link2, Bell, User, Users, Plus, Shield, ShieldAlert, Sparkles, Key, CheckCircle2, AlertTriangle, Eye, EyeOff, Trash2, Mail, Send, QrCode } from 'lucide-react'
+import { Save, Building2, Phone, MapPin, Hash, Calendar, Settings as SettingsIcon, Link2, Bell, User, Users, Plus, Shield, ShieldAlert, Sparkles, Key, CheckCircle2, AlertTriangle, Eye, EyeOff, Trash2, Mail, Send, QrCode, Info } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { createClient } from '@supabase/supabase-js'
 import { useAuth } from '../../contexts/AuthContext'
