@@ -20,7 +20,7 @@ export function PageLoader() {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <img
-          src="/logo.png"
+          src="/logo.png?v=2"
           alt="Batch Desk Logo"
           className="h-20 w-auto object-contain animate-pulse"
         />

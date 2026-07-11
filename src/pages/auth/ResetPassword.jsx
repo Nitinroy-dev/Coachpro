@@ -67,7 +67,7 @@ export default function ResetPassword() {
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-6">
-            <img src="/logo.png" alt="CoachPro Logo" className="h-16 mx-auto mb-4 object-contain" />
+            <img src="/logo.png?v=2" alt="Batch Desk Logo" className="h-16 mx-auto mb-4 object-contain" />
             <h1 className="text-xl font-bold text-gray-900">Set new password</h1>
             <p className="text-gray-500 text-sm mt-0.5">Please choose a strong password</p>
           </div>

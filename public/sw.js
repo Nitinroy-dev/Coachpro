@@ -1,6 +1,6 @@
-const CACHE_NAME = 'batchdesk-v1'
-const STATIC_CACHE = 'batchdesk-static-v1'
-const API_CACHE = 'batchdesk-api-v1'
+const CACHE_NAME = 'batchdesk-v2'
+const STATIC_CACHE = 'batchdesk-static-v2'
+const API_CACHE = 'batchdesk-api-v2'
 
 const STATIC_ASSETS = [
   '/',

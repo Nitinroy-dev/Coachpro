@@ -70,7 +70,7 @@ export default function Sidebar({ open = true, onClose }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10 overflow-hidden">
-          <img src="/logo.png" alt="Batch Desk Logo" className="h-9 w-auto max-w-[150px] object-contain flex-shrink-0 bg-white rounded-lg p-0.5" />
+          <img src="/logo.png?v=2" alt="Batch Desk Logo" className="h-9 w-auto max-w-[150px] object-contain flex-shrink-0 bg-white rounded-lg p-0.5" />
           <div className="min-w-0 md:opacity-0 md:group-hover:opacity-100 lg:opacity-100 transition-opacity duration-200">
             <p className="text-blue-200 text-xs truncate font-semibold leading-tight">{institute?.name || 'Institute'}</p>
           </div>

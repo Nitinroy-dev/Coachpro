@@ -42,7 +42,7 @@ export default function ForgotPassword() {
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <img src="/logo.png" alt="CoachPro Logo" className="h-16 mx-auto mb-4 object-contain" />
+            <img src="/logo.png?v=2" alt="Batch Desk Logo" className="h-16 mx-auto mb-4 object-contain" />
             {sent ? (
               <>
                 <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
