@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import Modal from '../../components/ui/Modal'
 import Input from '../../components/ui/Input'
+import Select from '../../components/ui/Select'
 import Spinner from '../../components/ui/Spinner'
 import { GridCardSkeleton } from '../../components/ui/Skeleton'
 
