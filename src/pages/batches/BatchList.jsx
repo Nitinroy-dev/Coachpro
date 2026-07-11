@@ -25,7 +25,7 @@ export default function BatchList() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({
-    name: '', course_id: '', timing: '', start_date: '', end_date: '', capacity: '', teacher_id: ''
+    name: '', course_id: '', timing: '', start_date: '', end_date: '', capacity: '', teacher_id: '', weekdays: []
   })
   const [formLoading, setFormLoading] = useState(false)
   const [error, setError] = useState('')
@@ -92,9 +92,23 @@ export default function BatchList() {
     }
   }
 
-  const handleOpenForm = (batch = null) => {
+  const handleOpenForm = async (batch = null) => {
     if (batch) {
       setEditing(batch)
+      // Fetch associated weekdays for this batch
+      let existingDays = []
+      try {
+        const { data: scheduleData } = await supabase
+          .from('class_schedule')
+          .select('day_of_week')
+          .eq('batch_id', batch.id)
+        if (scheduleData) {
+          existingDays = scheduleData.map(s => s.day_of_week)
+        }
+      } catch (err) {
+        console.warn('Failed to load batch schedule days:', err)
+      }
+
       setForm({
         name: batch.name || '',
         course_id: batch.course_id || '',
@@ -102,12 +116,13 @@ export default function BatchList() {
         start_date: batch.start_date || '',
         end_date: batch.end_date || '',
         capacity: batch.capacity || '',
-        teacher_id: batch.teacher_id || ''
+        teacher_id: batch.teacher_id || '',
+        weekdays: existingDays
       })
     } else {
       setEditing(null)
       setForm({
-        name: '', course_id: courses[0]?.id || '', timing: '', start_date: new Date().toISOString().split('T')[0], end_date: '', capacity: '30', teacher_id: ''
+        name: '', course_id: courses[0]?.id || '', timing: '', start_date: new Date().toISOString().split('T')[0], end_date: '', capacity: '30', teacher_id: '', weekdays: []
       })
     }
     setError('')
@@ -147,12 +162,60 @@ export default function BatchList() {
         teacher_id: form.teacher_id || null,
       }
 
+      let savedBatchId = editing?.id
+
       if (editing) {
         const { error: err } = await supabase.from('batches').update(payload).eq('id', editing.id)
         if (err) throw err
+
+        // Remove old class schedule days for this batch before rewriting
+        await supabase.from('class_schedule').delete().eq('batch_id', editing.id)
       } else {
-        const { error: err } = await supabase.from('batches').insert(payload)
+        const { data: newBatch, error: err } = await supabase.from('batches').insert(payload).select('id').single()
         if (err) throw err
+        savedBatchId = newBatch.id
+      }
+
+      // Automatically generate/reflect in class_schedule if weekdays are selected
+      if (form.weekdays && form.weekdays.length > 0 && savedBatchId) {
+        // Parse start and end times from timing string (e.g. '7:00 AM - 9:00 AM' or '14:00 - 16:00')
+        let startTime = '10:00:00'
+        let endTime = '11:30:00'
+        
+        try {
+          const parts = form.timing.split('-')
+          if (parts.length === 2) {
+            const formatTime = (timeStr) => {
+              const cleaned = timeStr.trim().toUpperCase()
+              const isPM = cleaned.includes('PM')
+              const isAM = cleaned.includes('AM')
+              let [hoursStr, minutesStr] = cleaned.replace(/[AM|PM]/g, '').trim().split(':')
+              let hours = parseInt(hoursStr, 10)
+              let minutes = minutesStr ? parseInt(minutesStr, 10) : 0
+              if (isPM && hours < 12) hours += 12
+              if (isAM && hours === 12) hours = 0
+              return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`
+            }
+            startTime = formatTime(parts[0])
+            endTime = formatTime(parts[1])
+          }
+        } catch (parseErr) {
+          console.warn('Could not parse class timing string, using fallback times:', parseErr)
+        }
+
+        const schedulePayload = form.weekdays.map(day => ({
+          institute_id: instituteId,
+          batch_id: savedBatchId,
+          day_of_week: day,
+          start_time: startTime,
+          end_time: endTime,
+          teacher_id: form.teacher_id || null,
+          subject: 'Batch Class',
+          is_active: true
+        }))
+
+        const { error: schedErr } = await supabase.from('class_schedule').insert(schedulePayload)
+        if (schedErr) throw schedErr
       }
 
       setShowForm(false)
@@ -422,6 +485,39 @@ export default function BatchList() {
                   ...teachers.map(t => ({ value: t.id, label: t.name }))
                 ]}
               />
+            </div>
+
+            {/* Days of Week Selection */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-gray-700">Days of Week (Class Schedule)</label>
+              <div className="grid grid-cols-7 gap-1">
+                {[
+                  { id: 1, label: 'Mon' },
+                  { id: 2, label: 'Tue' },
+                  { id: 3, label: 'Wed' },
+                  { id: 4, label: 'Thu' },
+                  { id: 5, label: 'Fri' },
+                  { id: 6, label: 'Sat' },
+                  { id: 0, label: 'Sun' }
+                ].map(day => {
+                  const isChecked = form.weekdays?.includes(day.id)
+                  return (
+                    <button
+                      key={day.id}
+                      type="button"
+                      onClick={() => {
+                        const next = isChecked
+                          ? form.weekdays.filter(d => d !== day.id)
+                          : [...(form.weekdays || []), day.id]
+                        setForm({ ...form, weekdays: next })
+                      }}
+                      className={`py-2 rounded-xl text-xs font-bold transition-all border ${isChecked ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'}`}
+                    >
+                      {day.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {error && (
