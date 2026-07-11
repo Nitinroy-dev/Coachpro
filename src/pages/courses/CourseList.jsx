@@ -31,15 +31,17 @@ export default function CourseList() {
     setLoading(true)
     try {
       const isStaff = profile?.role === 'staff'
-      const [courseRes, batchRes] = await Promise.all([
+      const [courseRes, batchRes, structRes] = await Promise.all([
         supabase.from('courses').select('*').eq('institute_id', instituteId).order('created_at', { ascending: false }),
         isStaff 
           ? supabase.from('batches').select('id, course_id, teacher_id').eq('institute_id', instituteId).eq('teacher_id', profile.id)
-          : supabase.from('batches').select('id, course_id, teacher_id').eq('institute_id', instituteId)
+          : supabase.from('batches').select('id, course_id, teacher_id').eq('institute_id', instituteId),
+        supabase.from('fee_structures').select('id, name, course_id, total_amount, frequency, installment_count').eq('institute_id', instituteId)
       ])
 
       const rawCourses = courseRes.data || []
       const batches = batchRes.data || []
+      const structures = structRes.data || []
 
       // If user is a teacher, only include courses that have at least one batch assigned to them
       const assignedCourseIds = new Set(batches.map(b => b.course_id))
@@ -52,9 +54,18 @@ export default function CourseList() {
         batchCountMap[b.course_id] = (batchCountMap[b.course_id] || 0) + 1
       })
 
+      const structMap = {}
+      structures.forEach(s => {
+        if (s.course_id) {
+          if (!structMap[s.course_id]) structMap[s.course_id] = []
+          structMap[s.course_id].push(s)
+        }
+      })
+
       const formatted = filteredCourses.map(c => ({
         ...c,
-        batchesCount: batchCountMap[c.id] || 0
+        batchesCount: batchCountMap[c.id] || 0,
+        feeStructures: structMap[c.id] || []
       }))
 
       setCourses(formatted)
@@ -203,24 +214,38 @@ export default function CourseList() {
                   </p>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/30 p-3 rounded-xl border border-blue-100/60">
-                    <p className="text-[10px] uppercase font-bold text-gray-400">Total Fee</p>
-                    <p className="text-base font-extrabold text-[#1E3A8A]">₹{(course.total_fee || 0).toLocaleString('en-IN')}</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50/50 to-fuchsia-50/30 p-3 rounded-xl border border-purple-100/60">
-                    <p className="text-[10px] uppercase font-bold text-gray-400">Schedule</p>
-                    <p className="text-xs font-extrabold text-[#8B5CF6] capitalize mt-1">
-                      {course.fee_type === 'installments' 
-                        ? `${course.installment_count || course.installments_count || 1} Installments` 
-                        : (course.fee_type || 'One-Time').replace('_', ' ')}
-                    </p>
-                  </div>
+                <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/30 p-3 rounded-xl border border-blue-100/60">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Total Course Fee</p>
+                  <p className="text-base font-extrabold text-[#1E3A8A]">₹{(course.total_fee || 0).toLocaleString('en-IN')}</p>
                 </div>
 
-                <div className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl text-center">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Active Batches</p>
-                  <p className="text-sm font-extrabold text-gray-700">{course.batchesCount} configured</p>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Fee Structures</p>
+                  {course.feeStructures && course.feeStructures.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {course.feeStructures.map(fs => (
+                        <span 
+                          key={fs.id} 
+                          className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-[#1E3A8A]/5 text-[#1E3A8A] border border-[#1E3A8A]/10 px-2 py-0.5 rounded-lg"
+                        >
+                          {fs.name} ({fs.installment_count || 1}t)
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">No structure linked yet. Go to Fee Structures page to link one.</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl text-center">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Active Batches</p>
+                    <p className="text-sm font-extrabold text-gray-700">{course.batchesCount} configured</p>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl text-center flex flex-col justify-center">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Structures</p>
+                    <p className="text-sm font-extrabold text-gray-700">{course.feeStructures?.length || 0} active</p>
+                  </div>
                 </div>
               </div>
 
@@ -292,31 +317,6 @@ export default function CourseList() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Select
-                label="Fee Payment Schedule *"
-                value={form.fee_type}
-                onChange={(e) => setForm({ ...form, fee_type: e.target.value })}
-                options={[
-                  { value: 'one_time', label: 'One-Time Payment' },
-                  { value: 'monthly', label: 'Monthly' },
-                  { value: 'yearly', label: 'Yearly' },
-                  { value: 'installments', label: 'Installments' }
-                ]}
-                required
-              />
-
-              {form.fee_type === 'installments' && (
-                <Input
-                  label="Number of Installments *"
-                  type="number"
-                  placeholder="e.g. 3 or 4"
-                  value={form.installments_count}
-                  onChange={(e) => setForm({ ...form, installments_count: e.target.value })}
-                  required
-                />
-              )}
-            </div>
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 text-xs font-medium">
