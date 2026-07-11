@@ -71,11 +71,13 @@ export default function CourseList() {
         name: course.name || '',
         description: course.description || '',
         duration: course.duration || '',
-        total_fee: course.total_fee || ''
+        total_fee: course.total_fee || '',
+        fee_type: course.fee_type || 'one_time',
+        installments_count: course.installments_count || ''
       })
     } else {
       setEditing(null)
-      setForm({ name: '', description: '', duration: '', total_fee: '' })
+      setForm({ name: '', description: '', duration: '', total_fee: '', fee_type: 'one_time', installments_count: '' })
     }
     setError('')
     setShowForm(true)
@@ -114,6 +116,8 @@ export default function CourseList() {
         description: form.description.trim() || null,
         duration: form.duration.trim() || null,
         total_fee: Number(form.total_fee),
+        fee_type: form.fee_type,
+        installments_count: form.fee_type === 'installments' ? Number(form.installments_count) : null
       }
 
       if (editing) {
@@ -276,6 +280,32 @@ export default function CourseList() {
                 onChange={(e) => setForm({ ...form, total_fee: e.target.value })}
                 required
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Fee Payment Schedule *"
+                value={form.fee_type}
+                onChange={(e) => setForm({ ...form, fee_type: e.target.value })}
+                options={[
+                  { value: 'one_time', label: 'One-Time Payment' },
+                  { value: 'monthly', label: 'Monthly' },
+                  { value: 'yearly', label: 'Yearly' },
+                  { value: 'installments', label: 'Installments' }
+                ]}
+                required
+              />
+
+              {form.fee_type === 'installments' && (
+                <Input
+                  label="Number of Installments *"
+                  type="number"
+                  placeholder="e.g. 3 or 4"
+                  value={form.installments_count}
+                  onChange={(e) => setForm({ ...form, installments_count: e.target.value })}
+                  required
+                />
+              )}
             </div>
 
             {error && (
