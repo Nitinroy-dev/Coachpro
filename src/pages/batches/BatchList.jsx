@@ -56,7 +56,7 @@ export default function BatchList() {
       const [batchRes, courseRes, teacherRes, studRes] = await Promise.all([
         batchQuery,
         supabase.from('courses').select('id, name').eq('institute_id', instituteId).order('name'),
-        supabase.from('users').select('id, name').eq('institute_id', instituteId),
+        supabase.from('users').select('id, name').eq('institute_id', instituteId).in('role', ['admin', 'staff']),
         supabase.from('students').select('id, batch_id').eq('institute_id', instituteId).eq('status', 'active')
       ])
 
