@@ -258,9 +258,13 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
           .select('*, students(*, batches(*, courses(*)))')
           .single()
 
-        setSavedInstallment(updatedInst || {
+        setSavedInstallment(updatedInst ? {
+          ...updatedInst,
+          amount_paid_now: payingAmount,
+        } : {
           ...selectedInstallment,
           paid_amount: newPaidTotal,
+          amount_paid_now: payingAmount,
           receipt_number: receiptNo,
           payment_mode: mode,
           paid_date: form.paid_date,

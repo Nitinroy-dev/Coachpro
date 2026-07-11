@@ -12,9 +12,11 @@ export default function FeeReceipt({ installment, onClose }) {
   const receiptRef = useRef(null)
 
   const student = installment?.students
-  const paid = installment?.paid_amount || installment?.amount || 0
-  const totalInstAmount = installment?.amount || paid
-  const remaining = Math.max(0, totalInstAmount - paid)
+  const paidNow = installment?.amount_paid_now ?? installment?.paid_amount ?? installment?.amount ?? 0
+  const totalPaidSoFar = installment?.paid_amount || paidNow
+  const totalInstAmount = installment?.amount || paidNow
+  const remaining = Math.max(0, totalInstAmount - totalPaidSoFar)
+  const isPartialPayment = remaining > 0
   const date = installment?.paid_date || new Date().toISOString().split('T')[0]
   const receiptNo = installment?.receipt_number || `RCP-${Date.now()}`
 
@@ -73,9 +75,10 @@ export default function FeeReceipt({ installment, onClose }) {
         ['Course', student?.batches?.courses?.name || '—'],
         ['Installment #', `Installment #${installment?.installment_number || '1'}`],
         ['Payment Mode', (installment?.payment_mode || 'cash').toUpperCase()],
-        ['Total Installment Fee', `Rs. ${totalInstAmount.toLocaleString('en-IN')}`],
-        ['Amount Paid Today', `Rs. ${paid.toLocaleString('en-IN')}`],
-        ['Remaining Due', `Rs. ${remaining.toLocaleString('en-IN')}`],
+        ['Total Installment Amount', `Rs. ${totalInstAmount.toLocaleString('en-IN')}`],
+        ['Amount Paid This Transaction', `Rs. ${paidNow.toLocaleString('en-IN')}`],
+        ['Total Paid So Far', `Rs. ${totalPaidSoFar.toLocaleString('en-IN')}`],
+        ['Remaining Balance Due', remaining > 0 ? `Rs. ${remaining.toLocaleString('en-IN')} (Partial)` : 'Rs. 0 (Fully Paid)'],
       ],
       styles: { fontSize: 10 },
       headStyles: { fillColor: [30, 58, 138], textColor: 255 },
@@ -90,7 +93,7 @@ export default function FeeReceipt({ installment, onClose }) {
     doc.setFillColor(249, 115, 22)
     doc.rect(15, finalY, pageWidth - 30, 14, 'F')
     doc.setTextColor(255, 255, 255)
-    doc.text(`Amount Paid: Rs. ${paid.toLocaleString('en-IN')}`, pageWidth / 2, finalY + 9, { align: 'center' })
+    doc.text(`Amount Paid: Rs. ${paidNow.toLocaleString('en-IN')}`, pageWidth / 2, finalY + 9, { align: 'center' })
 
     // Footer
     doc.setTextColor(100, 100, 100)
@@ -172,13 +175,19 @@ export default function FeeReceipt({ installment, onClose }) {
               <span className="font-semibold text-gray-900">₹{totalInstAmount.toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between py-1 text-sm font-bold text-green-600 bg-green-50 px-3 py-2 rounded-xl border border-green-100">
-              <span>Amount Paid Today</span>
-              <span>₹{paid.toLocaleString('en-IN')}</span>
+              <span>Amount Paid This Transaction</span>
+              <span>₹{paidNow.toLocaleString('en-IN')}</span>
             </div>
+            {totalPaidSoFar > paidNow && (
+              <div className="flex justify-between py-1 text-xs font-semibold text-blue-700">
+                <span>Total Paid So Far</span>
+                <span>₹{totalPaidSoFar.toLocaleString('en-IN')}</span>
+              </div>
+            )}
             <div className="flex justify-between py-1 text-xs font-semibold text-gray-600">
               <span>Remaining Balance Due</span>
               <span className={remaining > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
-                {remaining > 0 ? `₹${remaining.toLocaleString('en-IN')}` : '₹0 (Paid Full)'}
+                {remaining > 0 ? `₹${remaining.toLocaleString('en-IN')} (Partial Payment)` : '₹0 (Fully Paid ✓)'}
               </span>
             </div>
           </div>
