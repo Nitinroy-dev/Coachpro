@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { openRazorpayCheckout } from '../../lib/razorpay'
@@ -42,10 +42,6 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
   // UPI Payments QR Modal state
   const [showUpiQrModal, setShowUpiQrModal] = useState(false)
   const [upiQrUrl, setUpiQrUrl] = useState('')
-  const [upiPolling, setUpiPolling] = useState(false)
-  const [upiAutoDetected, setUpiAutoDetected] = useState(false)
-  const pollIntervalRef = useRef(null)
-  const upiOpenedAtRef = useRef(null)
 
   const upiId = institute?.settings?.upi_id || 'coachpro@upi'
   const upiName = institute?.settings?.upi_name || institute?.name || 'CoachPro Academy'
@@ -60,53 +56,7 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
     }
   }, [form.student_id, activeInstituteId, students.length])
 
-  // Auto-detect UPI payment: polls fee_installments every 5s while QR is shown
-  useEffect(() => {
-    if (!showUpiQrModal) {
-      // Clear any running poll when modal is closed
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current)
-        pollIntervalRef.current = null
-      }
-      setUpiPolling(false)
-      return
-    }
 
-    upiOpenedAtRef.current = new Date().toISOString()
-    setUpiPolling(true)
-    setUpiAutoDetected(false)
-
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        const instId = form.installment_id || selectedInstallment?.id
-        if (!instId) return
-        // Check if this installment has been marked paid (by another session / webhook)
-        const { data } = await supabase
-          .from('fee_installments')
-          .select('status, paid_amount')
-          .eq('id', instId)
-          .maybeSingle()
-
-        if (data && (data.status === 'paid' || data.paid_amount >= (selectedInstallment?.amount || 0))) {
-          clearInterval(pollIntervalRef.current)
-          pollIntervalRef.current = null
-          setUpiAutoDetected(true)
-          setUpiPolling(false)
-          setShowUpiQrModal(false)
-          await savePayment('upi')
-        }
-      } catch (e) {
-        console.error('UPI poll error', e)
-      }
-    }, 5000)
-
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current)
-        pollIntervalRef.current = null
-      }
-    }
-  }, [showUpiQrModal])
 
   const fetchStudents = async () => {
     const { data } = await supabase
@@ -535,15 +485,7 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
               </div>
             </div>
 
-            {/* Auto-detect status indicator */}
-            {upiPolling && (
-              <div className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 rounded-xl p-2.5 text-xs text-blue-700 font-medium">
-                <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-                Waiting for payment confirmation automatically...
-              </div>
-            )}
-
-            <p className="text-[10px] text-gray-500 italic">Have the student scan this QR using GPay, PhonePe, BHIM or any UPI app. The system will auto-detect if payment is recorded. Or click <strong>"Confirm Payment Done"</strong> manually after the transfer completes.</p>
+            <p className="text-[10px] text-gray-500 italic">Have the student scan this QR using GPay, PhonePe, BHIM or any UPI app. Once they complete the payment, click <strong>"✅ Confirm Payment Done"</strong> to record it and print their receipt.</p>
           </div>
         </Modal>
       )}
