@@ -142,7 +142,7 @@ export default function StudentCreate() {
 
       const [existingStudent, existingUser] = await Promise.all([
         supabase.from('students').select('id, name').eq('email', cleanEmail).maybeSingle(),
-        supabase.from('users').select('id, name').or(`email.eq.${cleanEmail},phone.eq.${cleanPhone}`).maybeSingle()
+        supabase.from('users').select('id, name').eq('phone', cleanPhone).maybeSingle()
       ])
 
       if (existingStudent.data) {
