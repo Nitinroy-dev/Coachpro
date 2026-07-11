@@ -70,7 +70,7 @@ export default function Timetable() {
     try {
       const { data } = await supabase
         .from('class_schedule')
-        .select('*, users:teacher_id(name), batches(name)')
+        .select('*, users:teacher_id(name), batches(name, courses(name))')
         .eq('batch_id', selectedBatch)
         .eq('is_active', true)
         .order('start_time')
@@ -257,7 +257,7 @@ export default function Timetable() {
                         <div className="flex items-center justify-between text-[10px] font-bold text-[#1E3A8A] bg-blue-50 px-2 py-0.5 rounded-md">
                           <span className="flex items-center gap-1"><Clock size={10} /> {s.start_time?.slice(0, 5)} - {s.end_time?.slice(0, 5)}</span>
                         </div>
-                        <p className="font-bold text-gray-900 text-xs leading-tight">{s.subject === 'Batch Class' || !s.subject ? s.batches?.name : s.subject}</p>
+                        <p className="font-bold text-gray-900 text-xs leading-tight">{s.subject === 'Batch Class' || !s.subject ? (s.batches?.courses?.name || s.batches?.name) : s.subject}</p>
                         <p className="text-[10px] text-gray-500 truncate">👨‍🏫 {s.users?.name || 'Unassigned'}</p>
 
                         <div className="pt-1 flex justify-end gap-1 border-t border-gray-100 opacity-80 group-hover:opacity-100">
@@ -300,7 +300,7 @@ export default function Timetable() {
                     <div key={s.id} className="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-between">
                       <div>
                         <span className="text-xs font-mono font-bold text-[#1E3A8A] bg-white px-2 py-0.5 rounded border border-blue-100">{s.start_time?.slice(0, 5)} - {s.end_time?.slice(0, 5)}</span>
-                        <h4 className="font-bold text-gray-900 text-sm mt-1">{s.subject === 'Batch Class' || !s.subject ? s.batches?.name : s.subject}</h4>
+                        <h4 className="font-bold text-gray-900 text-sm mt-1">{s.subject === 'Batch Class' || !s.subject ? (s.batches?.courses?.name || s.batches?.name) : s.subject}</h4>
                         <p className="text-xs text-gray-500">Teacher: {s.users?.name || '—'}</p>
                       </div>
                       <div className="flex items-center gap-1">
