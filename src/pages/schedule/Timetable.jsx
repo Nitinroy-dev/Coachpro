@@ -61,7 +61,7 @@ export default function Timetable() {
   }
 
   const fetchTeachers = async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name').eq('institute_id', instituteId)
+    const { data } = await supabase.from('users').select('id, name').eq('institute_id', instituteId).in('role', ['admin', 'staff'])
     setTeachers(data || [])
   }
 
@@ -70,7 +70,7 @@ export default function Timetable() {
     try {
       const { data } = await supabase
         .from('class_schedule')
-        .select('*, profiles:teacher_id(full_name)')
+        .select('*, users:teacher_id(name)')
         .eq('batch_id', selectedBatch)
         .eq('is_active', true)
         .order('start_time')
@@ -258,7 +258,7 @@ export default function Timetable() {
                           <span className="flex items-center gap-1"><Clock size={10} /> {s.start_time?.slice(0, 5)} - {s.end_time?.slice(0, 5)}</span>
                         </div>
                         <p className="font-bold text-gray-900 text-xs leading-tight">{s.subject}</p>
-                        <p className="text-[10px] text-gray-500 truncate">👨‍🏫 {s.profiles?.full_name || 'Unassigned'}</p>
+                        <p className="text-[10px] text-gray-500 truncate">👨‍🏫 {s.users?.name || 'Unassigned'}</p>
 
                         <div className="pt-1 flex justify-end gap-1 border-t border-gray-100 opacity-80 group-hover:opacity-100">
                           <button onClick={() => handleOpenEdit(s)} className="p-1 text-blue-600 hover:bg-blue-50 rounded"><Edit2 size={12} /></button>
@@ -301,7 +301,7 @@ export default function Timetable() {
                       <div>
                         <span className="text-xs font-mono font-bold text-[#1E3A8A] bg-white px-2 py-0.5 rounded border border-blue-100">{s.start_time?.slice(0, 5)} - {s.end_time?.slice(0, 5)}</span>
                         <h4 className="font-bold text-gray-900 text-sm mt-1">{s.subject}</h4>
-                        <p className="text-xs text-gray-500">Teacher: {s.profiles?.full_name || '—'}</p>
+                        <p className="text-xs text-gray-500">Teacher: {s.users?.name || '—'}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button size="xs" variant="ghost" icon={Edit2} onClick={() => handleOpenEdit(s)} />
@@ -353,7 +353,7 @@ export default function Timetable() {
               label="Assign Teacher (Staff)"
               value={slotForm.teacher_id}
               onChange={(e) => setSlotForm({ ...slotForm, teacher_id: e.target.value })}
-              options={[{ value: '', label: 'Unassigned' }, ...teachers.map(t => ({ value: t.id, label: t.full_name || 'Staff User' }))]}
+              options={[{ value: '', label: 'Unassigned' }, ...teachers.map(t => ({ value: t.id, label: t.name || 'Staff User' }))]}
             />
           </form>
         </Modal>
