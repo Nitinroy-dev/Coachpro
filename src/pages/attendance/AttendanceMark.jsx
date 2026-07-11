@@ -10,6 +10,7 @@ import Input from '../../components/ui/Input'
 import Card, { CardHeader, CardTitle } from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import Spinner from '../../components/ui/Spinner'
+import { GridCardSkeleton } from '../../components/ui/Skeleton'
 
 export default function AttendanceMark() {
   const { profile } = useAuth()
