@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Download, Printer, Send, X } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { useAuth } from '../../contexts/AuthContext'
+import { supabase } from '../../lib/supabase'
 import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
 import { sendWhatsAppMessage } from '../../lib/wati'
@@ -15,10 +16,38 @@ export default function FeeReceipt({ installment, onClose }) {
   const paidNow = installment?.amount_paid_now ?? installment?.paid_amount ?? installment?.amount ?? 0
   const totalPaidSoFar = installment?.paid_amount || paidNow
   const totalInstAmount = installment?.amount || paidNow
-  const remaining = Math.max(0, totalInstAmount - totalPaidSoFar)
-  const isPartialPayment = remaining > 0
   const date = installment?.paid_date || new Date().toISOString().split('T')[0]
   const receiptNo = installment?.receipt_number || `RCP-${Date.now()}`
+
+  // Fetch real outstanding balance from DB — never rely on local state
+  const [totalOutstanding, setTotalOutstanding] = useState(null)
+  const [loadingBalance, setLoadingBalance] = useState(true)
+
+  useEffect(() => {
+    const fetchPending = async () => {
+      const studentId = student?.id || installment?.student_id
+      if (!studentId) { setLoadingBalance(false); return }
+      const { data } = await supabase
+        .from('fee_installments')
+        .select('amount, paid_amount, status')
+        .eq('student_id', studentId)
+        .not('status', 'eq', 'waived')
+      if (data) {
+        const outstanding = data.reduce((sum, row) => {
+          const due = (row.amount || 0) - (row.paid_amount || 0)
+          return sum + Math.max(0, due)
+        }, 0)
+        setTotalOutstanding(outstanding)
+      }
+      setLoadingBalance(false)
+    }
+    fetchPending()
+  }, [student?.id, installment?.student_id])
+
+  // Fallback to local calc if DB fetch fails
+  const remaining = totalOutstanding !== null
+    ? totalOutstanding
+    : Math.max(0, totalInstAmount - totalPaidSoFar)
 
   const handlePrint = () => {
     window.print()
@@ -27,7 +56,7 @@ export default function FeeReceipt({ installment, onClose }) {
   const handleWhatsAppShare = async () => {
     const recipient = student?.parent_phone || student?.phone
     if (!recipient) { alert('Recipient phone missing!'); return }
-    const msg = `Dear ${student?.parent_name || student?.name}, payment receipt ${receiptNo} of Rs. ${paid.toLocaleString('en-IN')} has been recorded for ${student?.name}. Thank you! — ${institute?.name || 'CoachPro'}`
+    const msg = `Dear ${student?.parent_name || student?.name}, payment receipt ${receiptNo} of Rs. ${paidNow.toLocaleString('en-IN')} has been recorded for ${student?.name}. Outstanding balance: Rs. ${remaining.toLocaleString('en-IN')}. Thank you! — ${institute?.name || 'CoachPro'}`
     await sendWhatsAppMessage(recipient, msg)
     alert('Receipt sent via WhatsApp!')
   }
@@ -184,10 +213,15 @@ export default function FeeReceipt({ installment, onClose }) {
                 <span>₹{totalPaidSoFar.toLocaleString('en-IN')}</span>
               </div>
             )}
-            <div className="flex justify-between py-1 text-xs font-semibold text-gray-600">
-              <span>Remaining Balance Due</span>
+            <div className="flex justify-between py-1 text-xs font-semibold text-gray-600 border-t border-gray-100 pt-2 mt-1">
+              <span>Total Outstanding Balance</span>
               <span className={remaining > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
-                {remaining > 0 ? `₹${remaining.toLocaleString('en-IN')} (Partial Payment)` : '₹0 (Fully Paid ✓)'}
+                {loadingBalance
+                  ? <span className="text-gray-400 italic">loading...</span>
+                  : remaining > 0
+                    ? `₹${remaining.toLocaleString('en-IN')} remaining`
+                    : '₹0 — Fully Paid ✓'
+                }
               </span>
             </div>
           </div>
