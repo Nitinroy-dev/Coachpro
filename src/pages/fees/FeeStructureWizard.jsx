@@ -153,7 +153,7 @@ export default function FeeStructureWizard({ onClose, onSaved }) {
         name: form.name.trim(),
         total_amount: Number(form.total_amount),
         frequency: form.frequency,
-        installments_count: schedulePreview.length,
+        installment_count: schedulePreview.length,
       }
 
       const { error: err } = await supabase.from('fee_structures').insert(payload)

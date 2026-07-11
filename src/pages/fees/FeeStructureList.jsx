@@ -119,7 +119,7 @@ export default function FeeStructureList() {
                   </div>
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <p className="text-[10px] uppercase font-bold text-gray-400">Installments</p>
-                    <p className="text-base font-extrabold text-[#1E3A8A]">{s.installments_count || 1} Terms</p>
+                    <p className="text-base font-extrabold text-[#1E3A8A]">{s.installment_count || 1} Terms</p>
                   </div>
                 </div>
 
