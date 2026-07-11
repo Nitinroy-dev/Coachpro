@@ -194,32 +194,40 @@ export default function NotificationCenter() {
           formattedMsg = formattedMsg.replace(/\[Batch Name\]/g, s.batches?.name || 'Your Batch')
         }
 
-        // Send simulated or real WhatsApp message
-        const response = await sendWhatsAppMessage(phone, formattedMsg)
-        const status = response.success ? 'delivered' : 'failed'
-
-        if (response.success) {
-          successCount++
-        } else {
-          failCount++
+        // Try to send WhatsApp if configured
+        const phone = s.phone || s.parent_phone
+        let waStatus = 'pending' // default: in-app only
+        if (phone) {
+          const response = await sendWhatsAppMessage(phone, formattedMsg)
+          if (response.success) {
+            waStatus = 'delivered'
+            successCount++
+          } else if (response.error !== 'Wati API not configured') {
+            // Real failure (configured but failed)
+            failCount++
+          }
+          // If Wati not configured → waStatus stays 'pending' (in-app)
         }
 
-        // Log entry in notifications table
+        // Always log to notifications table — students receive in-app via Realtime
         await supabase.from('notifications').insert({
           institute_id: instituteId,
           student_id: s.id,
           type: messageType === 'custom' ? 'announcement' : messageType,
           message: formattedMsg,
-          status: status,
+          status: waStatus,
           sent_at: new Date().toISOString()
         })
       }
 
+      const totalSent = targetStudents.length
       if (successCount > 0) {
-        toast.success(`Successfully sent ${successCount} WhatsApp alerts.`);
+        toast.success(`✅ ${successCount} WhatsApp alerts sent. ${totalSent - successCount > 0 ? `${totalSent - successCount} saved as in-app notifications.` : ''}`)
+      } else {
+        toast.success(`🔔 Notification dispatched to ${totalSent} student${totalSent > 1 ? 's' : ''} via in-app (WhatsApp not configured).`)
       }
       if (failCount > 0) {
-        toast.error(`Failed to dispatch ${failCount} alerts. Please check API integrations.`);
+        toast.error(`Failed to dispatch ${failCount} WhatsApp alerts.`)
       }
 
       // Reset send states

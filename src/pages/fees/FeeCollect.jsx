@@ -43,8 +43,8 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
   const [showUpiQrModal, setShowUpiQrModal] = useState(false)
   const [upiQrUrl, setUpiQrUrl] = useState('')
 
-  const upiId = institute?.settings?.upi_id || 'coachpro@upi'
-  const upiName = institute?.settings?.upi_name || institute?.name || 'CoachPro Academy'
+  const upiId = institute?.settings?.upi_id || 'batchdesk@upi'
+  const upiName = institute?.settings?.upi_name || institute?.name || 'Batch Desk Academy'
 
   useEffect(() => {
     if (activeInstituteId) fetchStudents()

@@ -134,7 +134,7 @@ export default function Settings() {
       })
 
       setNotifTemplates({
-        fee_due: settings.message_templates?.fee_due || "🎓 *[Institute Name]*\n\nDear [Student Name],\n\nThis is a reminder that your fee payment is due soon. Please clear outstanding balance of ₹[Amount] as soon as possible.\n\n_CoachPro_",
+        fee_due: settings.message_templates?.fee_due || "🎓 *[Institute Name]*\n\nDear [Student Name],\n\nThis is a reminder that your fee payment is due soon. Please clear outstanding balance of ₹[Amount] as soon as possible.\n\n_Batch Desk_",
         fee_paid: settings.message_templates?.fee_paid || "✅ *[Institute Name]*\n\nDear [Student Name],\n\nYour fee payment of *₹[Amount]* has been received successfully. Receipt No: *[Receipt No]*.\n\nThank you! 🙏",
         absent: settings.message_templates?.absent || "⚠️ *[Institute Name]*\n\nDear Parent,\n\nYour ward [Student Name] was marked absent from batch [Batch Name] today ([Date]). Please contact us to share the reason.",
         extra_class: settings.message_templates?.extra_class || "📚 *[Institute Name]*\n\nDear [Student Name],\n\nAn extra class has been scheduled for your batch [Batch Name] on [Date] at [Time]. Please be present.",

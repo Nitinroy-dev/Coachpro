@@ -111,8 +111,8 @@ export default function StudentFees() {
     const inst = selectedPaymentInst
     if (!inst) return
     const balance = Number(inst.amount) - Number(inst.paid_amount || 0)
-    const upiId = institute?.settings?.upi_id || 'coachpro@upi'
-    const upiName = institute?.settings?.upi_name || institute?.name || 'CoachPro Academy'
+    const upiId = institute?.settings?.upi_id || 'batchdesk@upi'
+    const upiName = institute?.settings?.upi_name || institute?.name || 'Batch Desk Academy'
     
     const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName.trim())}&am=${balance}&cu=INR&tn=${encodeURIComponent(studentRecord.name + ' - Installment #' + inst.installment_number)}`
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`

@@ -72,9 +72,9 @@ export default function Login() {
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-6">
-            <img src="/logo.png" alt="CoachPro Logo" className="h-16 mx-auto mb-4 object-contain" />
+            <img src="/logo.png" alt="Batch Desk Logo" className="h-16 mx-auto mb-4 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Welcome back!</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Sign in to your CoachPro account</p>
+            <p className="text-gray-500 text-sm mt-0.5">Sign in to your Batch Desk account</p>
           </div>
 
           {/* Role Toggle Selector */}

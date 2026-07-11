@@ -1,6 +1,6 @@
-const CACHE_NAME = 'coachpro-v1'
-const STATIC_CACHE = 'coachpro-static-v1'
-const API_CACHE = 'coachpro-api-v1'
+const CACHE_NAME = 'batchdesk-v1'
+const STATIC_CACHE = 'batchdesk-static-v1'
+const API_CACHE = 'batchdesk-api-v1'
 
 const STATIC_ASSETS = [
   '/',
@@ -80,7 +80,7 @@ self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {}
   event.waitUntil(
     self.registration.showNotification(
-      data.title || 'CoachPro',
+      data.title || 'Batch Desk',
       {
         body: data.body || 'New notification',
         icon: '/icons/icon-192.png',

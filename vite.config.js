@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'CoachPro',
-        short_name: 'CoachPro',
-        description: 'Coaching Institute Management System',
+        name: 'Batch Desk',
+        short_name: 'Batch Desk',
+        description: 'Batch Desk Coaching Institute Management System',
         theme_color: '#1E3A8A',
         background_color: '#1E3A8A',
         display: 'standalone',

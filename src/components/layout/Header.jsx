@@ -21,7 +21,7 @@ export default function Header({ onMenuToggle }) {
   // Find best matching page title
   const title = Object.entries(pageTitles).find(
     ([path]) => location.pathname === path || location.pathname.startsWith(path + '/')
-  )?.[1] || 'CoachPro'
+  )?.[1] || 'Batch Desk'
 
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center gap-4">

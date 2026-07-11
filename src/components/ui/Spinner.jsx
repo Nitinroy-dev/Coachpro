@@ -21,10 +21,10 @@ export function PageLoader() {
       <div className="flex flex-col items-center gap-4">
         <img
           src="/logo.png"
-          alt="CoachPro Logo"
+          alt="Batch Desk Logo"
           className="h-20 w-auto object-contain animate-pulse"
         />
-        <p className="text-xs text-gray-400 font-medium tracking-wider animate-pulse uppercase">Loading CoachPro</p>
+        <p className="text-xs text-gray-400 font-medium tracking-wider animate-pulse uppercase">Loading Batch Desk</p>
       </div>
     </div>
   )

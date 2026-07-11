@@ -442,7 +442,7 @@ export default function Register() {
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Account created!</h2>
           <p className="text-gray-500 text-sm">
-            Welcome to CoachPro! {role === 'admin' ? 'Your 30-day free trial has started.' : 'Your account is now active.'}
+            Welcome to Batch Desk! {role === 'admin' ? 'Your 30-day free trial has started.' : 'Your account is now active.'}
             Redirecting to dashboard...
           </p>
         </div>
@@ -463,7 +463,7 @@ export default function Register() {
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-6">
-            <img src="/logo.png" alt="CoachPro Logo" className="h-16 mx-auto mb-4 object-contain" />
+            <img src="/logo.png" alt="Batch Desk Logo" className="h-16 mx-auto mb-4 object-contain" />
             <h1 className="text-xl font-bold text-gray-900">Create your account</h1>
             <p className="text-gray-500 text-sm mt-0.5">Register your coaching institute in seconds</p>
           </div>

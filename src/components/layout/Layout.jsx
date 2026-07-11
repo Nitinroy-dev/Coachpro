@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import TrialBanner from '../shared/TrialBanner'
 import SubscriptionGuard from '../shared/SubscriptionGuard'
 import { useAuth } from '../../contexts/AuthContext'
+import { useInAppNotifications } from '../../hooks/useInAppNotifications'
 import {
   LayoutDashboard, Users, CreditCard, CalendarCheck, MoreHorizontal,
   BookOpen, Clock, Bell, Settings, LogOut, ShieldCheck, X, GraduationCap, Calendar
@@ -13,11 +14,22 @@ import {
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [moreSheetOpen, setMoreSheetOpen] = useState(false)
+  const [notifBanner, setNotifBanner] = useState(null)
   const { user, profile, institute, signOut, showInstallBtn, handleInstall } = useAuth()
+  const { inAppNotifs, unreadCount, markAllRead } = useInAppNotifications()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@coachpro.com'
+  // Show a floating banner for every new incoming in-app notification
+  useEffect(() => {
+    if (inAppNotifs.length > 0) {
+      setNotifBanner(inAppNotifs[0])
+      const t = setTimeout(() => setNotifBanner(null), 5000)
+      return () => clearTimeout(t)
+    }
+  }, [inAppNotifs.length])
+
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   const isStudent = profile?.role === 'student'
@@ -68,6 +80,25 @@ export default function Layout() {
   return (
     <SubscriptionGuard>
       <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
+
+        {/* In-App Notification Banner */}
+        {notifBanner && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[90vw] max-w-sm animate-slide-down">
+            <div className="flex items-start gap-3 bg-[#1E3A8A] text-white px-4 py-3 rounded-2xl shadow-2xl border border-blue-400/30">
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <Bell size={16} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-200">{notifBanner.type || 'Notification'}</p>
+                <p className="text-sm font-medium leading-snug line-clamp-2">{notifBanner.message}</p>
+              </div>
+              <button onClick={() => setNotifBanner(null)} className="text-white/60 hover:text-white flex-shrink-0">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Sticky Trial Banner */}
         <TrialBanner />
 
@@ -181,7 +212,7 @@ export default function Layout() {
                     }}
                     className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors cursor-pointer"
                   >
-                    📲 Install CoachPro App
+                    📲 Install Batch Desk App
                   </button>
                 )}
                 <button
@@ -189,7 +220,7 @@ export default function Layout() {
                   className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-red-50 text-red-600 font-medium text-sm hover:bg-red-100 transition-colors"
                 >
                   <LogOut size={18} />
-                  Sign out of CoachPro
+                  Sign out of Batch Desk
                 </button>
               </div>
             </div>

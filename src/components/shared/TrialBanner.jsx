@@ -5,7 +5,7 @@ import { AlertTriangle, Sparkles, Lock } from 'lucide-react'
 export default function TrialBanner() {
   const { user, institute } = useAuth()
   const supportPhone = import.meta.env.VITE_SUPPORT_WHATSAPP_NUMBER || '919876543210'
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@coachpro.com'
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   const status = institute?.subscription_status
@@ -32,7 +32,7 @@ export default function TrialBanner() {
     if (sessionStorage.getItem(reminderKey)) return
 
     const msg = encodeURIComponent(
-      `⚠️ URGENT: Your CoachPro subscription for ${instituteName} expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}! Renew now to avoid losing access to all features, student data, and fee records.`
+      `⚠️ URGENT: Your Batch Desk subscription for ${instituteName} expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}! Renew now to avoid losing access to all features, student data, and fee records.`
     )
     const waUrl = `https://wa.me/${supportPhone}?text=${msg}`
     window.open(waUrl, '_blank', 'noopener,noreferrer')
@@ -42,7 +42,7 @@ export default function TrialBanner() {
   // Early return AFTER all hooks
   if (!shouldShow) return null
 
-  const upgradeMsg = encodeURIComponent(`Hi, I want to renew my CoachPro subscription for ${instituteName}`)
+  const upgradeMsg = encodeURIComponent(`Hi, I want to renew my Batch Desk subscription for ${instituteName}`)
   const whatsappUrl = `https://wa.me/${supportPhone}?text=${upgradeMsg}`
   const label = status === 'trial' ? 'Trial' : 'Subscription'
 

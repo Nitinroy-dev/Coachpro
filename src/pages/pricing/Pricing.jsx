@@ -25,7 +25,7 @@ export default function Pricing() {
 
   const handlePlanCta = (planKey) => {
     if (planKey === 'enterprise') {
-      const msg = `Hi, I'm interested in CoachPro Enterprise plan for ${profile?.institutes?.name || 'my institute'}`
+      const msg = `Hi, I'm interested in Batch Desk Enterprise plan for ${profile?.institutes?.name || 'my institute'}`
       window.open(`https://wa.me/${import.meta.env.VITE_SUPPORT_WHATSAPP || '919876543210'}?text=${encodeURIComponent(msg)}`, '_blank')
       return
     }

@@ -15,8 +15,8 @@ export default function Expired() {
   })
 
   const whatsappMessage = isSuspended
-    ? encodeURIComponent(`Hi, my CoachPro account for ${instituteName} has been suspended. I'd like to understand why and resolve the issue.`)
-    : encodeURIComponent(`Hi, I want to renew my CoachPro subscription for ${instituteName}`)
+    ? encodeURIComponent(`Hi, my Batch Desk account for ${instituteName} has been suspended. I'd like to understand why and resolve the issue.`)
+    : encodeURIComponent(`Hi, I want to renew my Batch Desk subscription for ${instituteName}`)
   const whatsappUrl = `https://wa.me/${supportPhone}?text=${whatsappMessage}`
 
   const features = [
@@ -40,7 +40,7 @@ export default function Expired() {
           </h1>
 
           <p className="text-gray-500 text-sm mb-6">
-            Access for <strong className="text-gray-800">{instituteName}</strong> has been suspended by the CoachPro platform administrator. Please contact support to understand and resolve this issue.
+            Access for <strong className="text-gray-800">{instituteName}</strong> has been suspended by the Batch Desk platform administrator. Please contact support to understand and resolve this issue.
           </p>
 
           <div className="bg-red-50 rounded-2xl p-5 mb-8 text-left border border-red-100">

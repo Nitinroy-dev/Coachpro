@@ -93,7 +93,7 @@ export function AuthProvider({ children }) {
 
       if (data) {
         setProfile(data)
-        localStorage.setItem('coachpro_last_sync', new Date().toLocaleString('en-IN'))
+        localStorage.setItem('batchdesk_last_sync', new Date().toLocaleString('en-IN'))
       } else {
         // Self-healing: user exists in auth.users but not in public.users
         console.warn('Profile missing for logged in user. Provisioning default institute and admin profile...')

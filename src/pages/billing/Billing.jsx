@@ -144,9 +144,9 @@ export default function Billing() {
 
   // UPI Payments checkout trigger — opens UPI deeplink + shows QR modal
   const handleUpiPaymentTrigger = () => {
-    const platformUpiId = import.meta.env.VITE_UPI_ID || 'coachpro@upi'
-    const platformUpiName = 'CoachPro SaaS Billing'
-    const tnNote = `CoachPro ${selectedPlan} ${billingCycle}`
+    const platformUpiId = import.meta.env.VITE_UPI_ID || 'batchdesk@upi'
+    const platformUpiName = 'Batch Desk SaaS Billing'
+    const tnNote = `Batch Desk ${selectedPlan} ${billingCycle}`
     
     // Build UPI deep link (opens GPay / PhonePe / Paytm directly)
     const upiDeepLink = `upi://pay?pa=${encodeURIComponent(platformUpiId)}&pn=${encodeURIComponent(platformUpiName)}&am=${totalAmountPaid}&cu=INR&tn=${encodeURIComponent(tnNote)}`
@@ -234,7 +234,7 @@ export default function Billing() {
     // 3. Send WhatsApp confirmation to institute owner
     const ownerPhone = profile?.phone || institute?.phone
     if (ownerPhone) {
-      const msg = `✅ Payment Successful!\nWelcome to CoachPro ${selectedPlan.toUpperCase()} Plan. Your subscription is active until ${new Date(newExpiry).toLocaleDateString('en-IN')}.\nInvoice: ${invoiceNo}\n— CoachPro Team`
+      const msg = `✅ Payment Successful!\nWelcome to Batch Desk ${selectedPlan.toUpperCase()} Plan. Your subscription is active until ${new Date(newExpiry).toLocaleDateString('en-IN')}.\nInvoice: ${invoiceNo}\n— Batch Desk Team`
       await sendWhatsAppMessage(ownerPhone, msg)
     }
 
@@ -267,7 +267,7 @@ export default function Billing() {
       if (insertErr) throw insertErr
 
       // Send alert to superadmin
-      const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@coachpro.com'
+      const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
       toast.success('UPI Payment submitted! Our team will verify and activate your subscription within 2-4 hours.')
       fetchPaymentHistory()
     } catch (err) {
@@ -287,12 +287,12 @@ export default function Billing() {
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(22)
     doc.setFont('helvetica', 'bold')
-    doc.text('CoachPro', 15, 18)
+    doc.text('Batch Desk', 15, 18)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text('TAX INVOICE', 15, 28)
 
-    doc.text('CoachPro Technologies Pvt Ltd', pageWidth - 15, 18, { align: 'right' })
+    doc.text('Batch Desk Technologies Pvt Ltd', pageWidth - 15, 18, { align: 'right' })
     doc.text('GSTIN: 27AAAAA0000A1Z5', pageWidth - 15, 25, { align: 'right' })
 
     doc.setTextColor(0, 0, 0)
@@ -306,7 +306,7 @@ export default function Billing() {
       startY: 65,
       head: [['Description', 'Billing Cycle', 'Amount']],
       body: [
-        [`CoachPro Subscription (${p.plan?.toUpperCase()} Plan)`, p.billing_cycle || 'monthly', `Rs. ${p.amount}`],
+        [`Batch Desk Subscription (${p.plan?.toUpperCase()} Plan)`, p.billing_cycle || 'monthly', `Rs. ${p.amount}`],
         ['GST (18%)', 'Tax', `Rs. ${p.gst_amount || 0}`],
         ['Total Paid', 'Final', `Rs. ${p.total_amount}`],
       ],
