@@ -210,7 +210,7 @@ export default function BatchList() {
           start_time: startTime,
           end_time: endTime,
           teacher_id: form.teacher_id || null,
-          subject: 'Batch Class',
+          subject: form.name.trim(),
           is_active: true
         }))
 
