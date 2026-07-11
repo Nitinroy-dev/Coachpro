@@ -212,7 +212,7 @@ export default function CourseList() {
                     <p className="text-[10px] uppercase font-bold text-gray-400">Schedule</p>
                     <p className="text-xs font-extrabold text-[#8B5CF6] capitalize mt-1">
                       {course.fee_type === 'installments' 
-                        ? `${course.installments_count || 1} Installments` 
+                        ? `${course.installment_count || course.installments_count || 1} Installments` 
                         : (course.fee_type || 'One-Time').replace('_', ' ')}
                     </p>
                   </div>

@@ -535,7 +535,7 @@ export default function StudentCreate() {
                 placeholder="Select fee structure"
                 value={form.fee_structure_id}
                 onChange={set('fee_structure_id')}
-                options={feeStructures.map(f => ({ value: f.id, label: `${f.name} (${f.installments_count || 1} Installment/s)` }))}
+                options={feeStructures.map(f => ({ value: f.id, label: `${f.name} (${f.installment_count || f.installments_count || 1} Installment/s)` }))}
               />
               <Input
                 label="Discount Amount (₹)"
