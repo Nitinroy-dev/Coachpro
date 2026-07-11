@@ -36,6 +36,9 @@ export default function BatchList() {
   const [batchAttStats, setBatchAttStats] = useState({ total: 0, pct: 0 })
   const [todayStatus, setTodayStatus] = useState('scheduled') // scheduled | cancelled | extra
   const [modalLoading, setModalLoading] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancellingClass, setCancellingClass] = useState(false)
 
   useEffect(() => {
     if (instituteId) fetchAll()
@@ -44,8 +47,14 @@ export default function BatchList() {
   const fetchAll = async () => {
     setLoading(true)
     try {
+      const isStaff = profile?.role === 'staff'
+      const batchQuery = supabase.from('batches').select('*, courses(name), users(name)').eq('institute_id', instituteId).order('created_at', { ascending: false })
+      if (isStaff) {
+        batchQuery.eq('teacher_id', profile.id)
+      }
+
       const [batchRes, courseRes, teacherRes, studRes] = await Promise.all([
-        supabase.from('batches').select('*, courses(name), users(name)').eq('institute_id', instituteId).order('created_at', { ascending: false }),
+        batchQuery,
         supabase.from('courses').select('id, name').eq('institute_id', instituteId).order('name'),
         supabase.from('users').select('id, name').eq('institute_id', instituteId),
         supabase.from('students').select('id, batch_id').eq('institute_id', instituteId).eq('status', 'active')
@@ -189,6 +198,39 @@ export default function BatchList() {
     }
   }
 
+  // Handle class cancellation execution
+  const handleCancelClassSubmit = async (e) => {
+    e.preventDefault()
+    if (!cancelReason.trim()) {
+      alert('Please enter a cancellation reason.')
+      return
+    }
+
+    setCancellingClass(true)
+    try {
+      const todayStr = new Date().toISOString().split('T')[0]
+      const { error: insertErr } = await supabase.from('class_events').insert({
+        institute_id: instituteId,
+        batch_id: selectedBatchModal.id,
+        event_date: todayStr,
+        event_type: 'cancelled',
+        notes: cancelReason.trim(),
+        title: 'Class Cancelled'
+      })
+
+      if (insertErr) throw insertErr
+
+      setTodayStatus('cancelled')
+      setShowCancelModal(false)
+      setCancelReason('')
+      alert('Class has been successfully cancelled and logged!')
+    } catch (err) {
+      alert(`Failed to cancel class: ${err.message}`)
+    } finally {
+      setCancellingClass(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex border-b border-gray-200">
@@ -211,9 +253,11 @@ export default function BatchList() {
           <h1 className="text-2xl font-bold text-gray-900">Batches Management</h1>
           <p className="text-sm text-gray-500">Organize class schedules, assigned faculty, and capacity limits</p>
         </div>
-        <Button variant="accent" icon={Plus} onClick={() => handleOpenForm()} className="shadow-md">
-          Add Batch
-        </Button>
+        {profile?.role !== 'staff' && (
+          <Button variant="accent" icon={Plus} onClick={() => handleOpenForm()} className="shadow-md">
+            Add Batch
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -284,22 +328,24 @@ export default function BatchList() {
 
                 <div className="flex items-center justify-between mt-5 pt-3 border-t border-gray-100 text-xs text-gray-400">
                   <span className="flex items-center gap-1 text-[#1E3A8A] font-bold group-hover:underline"><Eye size={14} /> View Roster</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleOpenForm(b) }}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
-                      title="Edit Batch"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(b, e)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                      title="Delete Batch"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  {profile?.role !== 'staff' && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleOpenForm(b) }}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+                        title="Edit Batch"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(b, e)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                        title="Delete Batch"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </Card>
             )
@@ -394,7 +440,20 @@ export default function BatchList() {
           onClose={() => setSelectedBatchModal(null)}
           title={`Batch Overview: ${selectedBatchModal.name}`}
           size="lg"
-          footer={<Button variant="ghost" onClick={() => setSelectedBatchModal(null)}>Close</Button>}
+          footer={
+            <div className="flex justify-between items-center w-full">
+              {todayStatus !== 'cancelled' ? (
+                <Button variant="danger" icon={XCircle} onClick={() => setShowCancelModal(true)}>
+                  Cancel Today's Class
+                </Button>
+              ) : (
+                <span className="text-xs text-red-500 font-bold bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl">
+                  Class Cancelled for Today
+                </span>
+              )}
+              <Button variant="ghost" onClick={() => setSelectedBatchModal(null)}>Close</Button>
+            </div>
+          }
         >
           {modalLoading ? (
             <div className="space-y-4">
@@ -448,6 +507,43 @@ export default function BatchList() {
               </div>
             </div>
           )}
+        </Modal>
+      )}
+
+      {/* Class Cancellation Reason Dialog Modal */}
+      {showCancelModal && (
+        <Modal
+          isOpen={true}
+          onClose={() => setShowCancelModal(false)}
+          title="Cancel Today's Class"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setShowCancelModal(false)} disabled={cancellingClass}>Go Back</Button>
+              <Button variant="danger" loading={cancellingClass} onClick={handleCancelClassSubmit}>
+                Confirm Cancellation
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-150 p-4 rounded-2xl flex gap-3 text-red-800 text-xs">
+              <AlertCircle className="text-red-500 flex-shrink-0" size={18} />
+              <div>
+                <p className="font-bold mb-1">Class Cancellation Notice</p>
+                <p>This action will mark today's class session for batch <strong>{selectedBatchModal?.name}</strong> as cancelled. Please specify a reason below so parents/students stay informed.</p>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-gray-700">Reason for Cancellation *</label>
+              <textarea
+                placeholder="e.g. Teacher is unwell / Public holiday announcement / Maintenance work"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full h-24 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/20 text-xs"
+                required
+              />
+            </div>
+          </div>
         </Modal>
       )}
     </div>

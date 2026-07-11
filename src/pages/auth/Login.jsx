@@ -37,7 +37,11 @@ export default function Login() {
       if (profileData) {
         const expectedRole = role === 'student' ? 'student' : role === 'teacher' ? 'staff' : 'admin'
         if (profileData.role !== expectedRole) {
-          console.warn('Selected role option does not match database user profile role.')
+          // Sign out immediately to clear cookies/session
+          await supabase.auth.signOut()
+          setError(`Access denied. This login portal is restricted to ${role === 'admin' ? 'Admins' : role === 'teacher' ? 'Teachers' : 'Students/Parents'}.`)
+          setLoading(false)
+          return
         }
       }
 

@@ -29,20 +29,29 @@ export default function CourseList() {
   const fetchCourses = async () => {
     setLoading(true)
     try {
+      const isStaff = profile?.role === 'staff'
       const [courseRes, batchRes] = await Promise.all([
         supabase.from('courses').select('*').eq('institute_id', instituteId).order('created_at', { ascending: false }),
-        supabase.from('batches').select('id, course_id').eq('institute_id', instituteId)
+        isStaff 
+          ? supabase.from('batches').select('id, course_id, teacher_id').eq('institute_id', instituteId).eq('teacher_id', profile.id)
+          : supabase.from('batches').select('id, course_id, teacher_id').eq('institute_id', instituteId)
       ])
 
       const rawCourses = courseRes.data || []
       const batches = batchRes.data || []
+
+      // If user is a teacher, only include courses that have at least one batch assigned to them
+      const assignedCourseIds = new Set(batches.map(b => b.course_id))
+      const filteredCourses = isStaff
+        ? rawCourses.filter(c => assignedCourseIds.has(c.id))
+        : rawCourses
 
       const batchCountMap = {}
       batches.forEach(b => {
         batchCountMap[b.course_id] = (batchCountMap[b.course_id] || 0) + 1
       })
 
-      const formatted = rawCourses.map(c => ({
+      const formatted = filteredCourses.map(c => ({
         ...c,
         batchesCount: batchCountMap[c.id] || 0
       }))
@@ -146,9 +155,11 @@ export default function CourseList() {
           <h1 className="text-2xl font-bold text-gray-900">Courses Directory</h1>
           <p className="text-sm text-gray-500">Manage your coaching academic programs and tuition structures</p>
         </div>
-        <Button variant="accent" icon={Plus} onClick={() => handleOpenForm()} className="shadow-md">
-          Add Course
-        </Button>
+        {profile?.role !== 'staff' && (
+          <Button variant="accent" icon={Plus} onClick={() => handleOpenForm()} className="shadow-md">
+            Add Course
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -199,21 +210,23 @@ export default function CourseList() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-gray-100">
-                <Button size="xs" variant="outline" icon={Edit2} onClick={() => handleOpenForm(course)} className="bg-white">
-                  Edit
-                </Button>
-                <Button
-                  size="xs"
-                  variant="danger"
-                  icon={Trash2}
-                  onClick={() => handleDelete(course)}
-                  disabled={course.batchesCount > 0}
-                  title={course.batchesCount > 0 ? "Cannot delete course with active batches" : "Delete Course"}
-                >
-                  Delete
-                </Button>
-              </div>
+              {profile?.role !== 'staff' && (
+                <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-gray-100">
+                  <Button size="xs" variant="outline" icon={Edit2} onClick={() => handleOpenForm(course)} className="bg-white">
+                    Edit
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="danger"
+                    icon={Trash2}
+                    onClick={() => handleDelete(course)}
+                    disabled={course.batchesCount > 0}
+                    title={course.batchesCount > 0 ? "Cannot delete course with active batches" : "Delete Course"}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              )}
             </Card>
           ))}
         </div>
