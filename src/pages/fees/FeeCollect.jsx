@@ -240,7 +240,7 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
     if (form.mode === 'razorpay' && !form.razorpay_id) {
       await handleRazorpay()
     } else if (form.mode === 'upi') {
-      const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${payingAmount}&cu=INR&tn=${encodeURIComponent((selectedStudent?.name || 'Student') + ' - Fees')}`
+      const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName.trim())}&am=${payingAmount}&cu=INR&tn=${encodeURIComponent((selectedStudent?.name || 'Student') + ' - Fees')}`
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`
       setUpiQrUrl(qrUrl)
       setShowUpiQrModal(true)

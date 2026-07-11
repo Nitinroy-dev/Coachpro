@@ -114,7 +114,7 @@ export default function StudentFees() {
     const upiId = institute?.settings?.upi_id || 'coachpro@upi'
     const upiName = institute?.settings?.upi_name || institute?.name || 'CoachPro Academy'
     
-    const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${balance}&cu=INR&tn=${encodeURIComponent(studentRecord.name + ' - Installment #' + inst.installment_number)}`
+    const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName.trim())}&am=${balance}&cu=INR&tn=${encodeURIComponent(studentRecord.name + ' - Installment #' + inst.installment_number)}`
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`
     
     setUpiQrUrl(qrUrl)
