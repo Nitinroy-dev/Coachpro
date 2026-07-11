@@ -114,8 +114,10 @@ export default function AttendanceMark() {
       const payload = students.map(s => ({
         institute_id: instituteId,
         student_id: s.id,
+        batch_id: selectedBatch,
         date: selectedDate,
         status: attendance[s.id] || 'present',
+        marked_by: profile.id
       }))
 
       const { error: upsertErr } = await supabase
