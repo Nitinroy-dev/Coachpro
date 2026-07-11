@@ -105,6 +105,44 @@ export default function StudentDetail() {
     fetchStudentHubData()
   }
 
+  // Delete student permanently from database
+  const handleDeleteStudent = async () => {
+    if (!window.confirm('WARNING: Permanently deleting this student will delete all their attendance records, invoice files, fee payments, and login access. This action CANNOT be undone.\n\nAre you sure you want to delete this student permanently?')) {
+      return
+    }
+    setActionLoading(true)
+    try {
+      // 1. Fetch user ID associated with this student email
+      if (student.email) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', student.email.trim())
+          .maybeSingle()
+
+        if (userData?.id) {
+          // Trigger cascade delete on public.users (which cascades to auth.users if configured, or deletes profile)
+          await supabase.from('users').delete().eq('id', userData.id)
+        }
+      }
+
+      // 2. Delete student record (cascading constraints handle installments, preferences, attendance, etc.)
+      const { error: deleteErr } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', id)
+
+      if (deleteErr) throw deleteErr
+
+      toast.success('Student has been permanently deleted from the database.')
+      navigate('/students')
+    } catch (err) {
+      toast.error(`Failed to delete student: ${err.message}`)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   // Waive installment
   const handleWaiveSubmit = async () => {
     if (!showWaiveModal) return
@@ -259,7 +297,12 @@ export default function StudentDetail() {
           </Button>
           {!isStaff && (
             <Button variant={student.status === 'active' ? 'danger' : 'success'} size="sm" onClick={handleToggleStatus}>
-              {student.status === 'active' ? 'Deactivate Student' : 'Activate Student'}
+              {student.status === 'active' ? 'Deactivate' : 'Activate'}
+            </Button>
+          )}
+          {!isStaff && (
+            <Button variant="danger" size="sm" onClick={handleDeleteStudent} className="bg-red-600 hover:bg-red-700 text-white">
+              Delete Permanently
             </Button>
           )}
         </div>
