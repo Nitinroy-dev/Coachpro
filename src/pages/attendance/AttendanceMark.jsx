@@ -58,7 +58,7 @@ export default function AttendanceMark() {
     try {
       const [studRes, attRes, eventRes] = await Promise.all([
         supabase.from('students').select('id, name, student_code, phone, parent_name, parent_phone, photo_url').eq('batch_id', selectedBatch).eq('status', 'active').order('name'),
-        supabase.from('attendance').select('student_id, status').eq('institute_id', instituteId).eq('date', selectedDate),
+        supabase.from('attendance').select('student_id, status').eq('institute_id', instituteId).eq('batch_id', selectedBatch).eq('date', selectedDate),
         supabase.from('class_events').select('*').eq('batch_id', selectedBatch).eq('event_date', selectedDate)
       ])
 
