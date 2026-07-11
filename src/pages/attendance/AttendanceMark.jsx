@@ -39,7 +39,12 @@ export default function AttendanceMark() {
   }, [selectedBatch, selectedDate, instituteId])
 
   const fetchBatches = async () => {
-    const { data } = await supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId).order('name')
+    const isStaff = profile?.role === 'staff'
+    const query = supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId)
+    if (isStaff) {
+      query.eq('teacher_id', profile.id)
+    }
+    const { data } = await query.order('name')
     setBatches(data || [])
     if (data && data.length > 0 && !selectedBatch) {
       setSelectedBatch(data[0].id)
@@ -190,7 +195,7 @@ export default function AttendanceMark() {
 
       {/* Step 3: Student Roster */}
       {loading ? (
-        <TableRowSkeleton rows={5} />
+        <GridCardSkeleton count={3} />
       ) : !selectedBatch ? (
         <Card className="text-center py-12 text-gray-400">Select a batch above to load student roster.</Card>
       ) : students.length === 0 ? (
