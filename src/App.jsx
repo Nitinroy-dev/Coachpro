@@ -45,6 +45,13 @@ export default function App() {
     // Force window focus immediately on startup
     window.focus()
 
+    // Enforce orientation lock to portrait if browser/PWA container supports Screen Orientation API
+    if (window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+      window.screen.orientation.lock('portrait').catch((err) => {
+        console.warn('Screen orientation locking not supported or requires fullscreen:', err.message)
+      })
+    }
+
     // Fallback: trigger delayed focus calls in case of OS background launch latency
     const t1 = setTimeout(() => window.focus(), 300)
     const t2 = setTimeout(() => window.focus(), 1000)
