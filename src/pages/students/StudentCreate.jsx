@@ -136,6 +136,27 @@ export default function StudentCreate() {
     setLoading(true)
 
     try {
+      // 0. Pre-checks: Validate if email or phone is already registered to another user/student
+      const cleanEmail = form.email.trim()
+      const cleanPhone = form.phone.trim()
+
+      const [existingStudent, existingUser] = await Promise.all([
+        supabase.from('students').select('id, name').eq('email', cleanEmail).maybeSingle(),
+        supabase.from('users').select('id, name').or(`email.eq.${cleanEmail},phone.eq.${cleanPhone}`).maybeSingle()
+      ])
+
+      if (existingStudent.data) {
+        setError(`This email (${cleanEmail}) is already registered to student: ${existingStudent.data.name}. Please use a unique email.`)
+        setLoading(false)
+        return
+      }
+
+      if (existingUser.data) {
+        setError(`This email or phone number is already registered in the system (User: ${existingUser.data.name}). Please use a unique email and phone number.`)
+        setLoading(false)
+        return
+      }
+
       // ENFORCE PLAN LIMITS
       const plan = institute?.plan || 'starter'
       const limits = { starter: 150, growth: 400, pro: 1000, enterprise: 999999 }
