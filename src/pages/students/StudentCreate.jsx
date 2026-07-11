@@ -317,6 +317,8 @@ export default function StudentCreate() {
       }
 
       setTempStudent(newStudent)
+      setShowCredentialsModal(true)
+      toast.success(`Success! Student ${newStudent.name} enrolled.`)
     } catch (err) {
       console.error('Create student error:', err)
       setError(err.message || 'Failed to enroll student.')
