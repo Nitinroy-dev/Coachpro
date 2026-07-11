@@ -1,6 +1,7 @@
 import { Menu, Bell, Search, Download } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
+import { useInAppNotifications } from '../../hooks/useInAppNotifications'
 
 const pageTitles = {
   '/dashboard': 'Dashboard',
@@ -16,6 +17,7 @@ const pageTitles = {
 
 export default function Header({ onMenuToggle }) {
   const { institute, showInstallBtn, handleInstall } = useAuth()
+  const { unreadCount } = useInAppNotifications()
   const location = useLocation()
 
   // Find best matching page title
@@ -61,11 +63,15 @@ export default function Header({ onMenuToggle }) {
           </div>
         )}
 
-        {/* Notification bell */}
-        <button className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+        {/* Notification bell linking to notifications panel or toggling read */}
+        <Link to="/notifications" className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
           <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#F97316]" />
-        </button>
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#F97316] text-white font-extrabold text-[9px] flex items-center justify-center border border-white leading-none shadow-xs">
+              {unreadCount}
+            </span>
+          )}
+        </Link>
       </div>
     </header>
   )
