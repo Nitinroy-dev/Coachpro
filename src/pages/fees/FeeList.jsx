@@ -375,7 +375,7 @@ export default function FeeList() {
                         <td className="p-3.5"><StatusBadge status={daysOverdue > 0 ? 'overdue' : i.status} /></td>
                         <td className="p-3.5 text-right space-x-1.5">
                           <Button size="xs" variant="success" onClick={() => { setSelectedInstallment(i); setShowCollect(true) }}>Collect</Button>
-                          <Button size="xs" variant="ghost" icon={Send} onClick={() => handleSendReminder(i)} title="Send Reminder" />
+                          <Button size="xs" variant="ghost" icon={Send} onClick={() => handleSendSingleReminder(i)} title="Send Reminder" />
                         </td>
                       </tr>
                     )
