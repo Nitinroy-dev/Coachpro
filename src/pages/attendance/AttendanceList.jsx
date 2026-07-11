@@ -40,8 +40,14 @@ export default function AttendanceList() {
   }, [instituteId, selectedBatch, selectedStudent, selectedDailyDate, activeReportTab])
 
   const fetchOptions = async () => {
+    const isStaff = profile?.role === 'staff'
+    const batchQuery = supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId)
+    if (isStaff) {
+      batchQuery.eq('teacher_id', profile.id)
+    }
+
     const [bRes, sRes] = await Promise.all([
-      supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId).order('name'),
+      batchQuery.order('name'),
       supabase.from('students').select('id, name, student_code, batch_id').eq('institute_id', instituteId).eq('status', 'active').order('name')
     ])
     const bList = bRes.data || []
