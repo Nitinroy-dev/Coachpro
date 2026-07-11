@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS courses (
   description TEXT,
   duration TEXT,
   total_fee NUMERIC,
+  fee_type TEXT DEFAULT 'one_time' CHECK (fee_type IN ('one_time','monthly','yearly','installments')),
+  installments_count INTEGER DEFAULT 1,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
