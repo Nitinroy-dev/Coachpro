@@ -19,30 +19,50 @@ export default function FeeReceipt({ installment, onClose }) {
   const date = installment?.paid_date || new Date().toISOString().split('T')[0]
   const receiptNo = installment?.receipt_number || `RCP-${Date.now()}`
 
-  // Fetch real outstanding balance from DB — never rely on local state
+  // Fetch real outstanding balance AND payment mode from DB
   const [totalOutstanding, setTotalOutstanding] = useState(null)
   const [loadingBalance, setLoadingBalance] = useState(true)
+  const [paymentMode, setPaymentMode] = useState(installment?.payment_mode || null)
 
   useEffect(() => {
     const fetchPending = async () => {
       const studentId = student?.id || installment?.student_id
-      if (!studentId) { setLoadingBalance(false); return }
-      const { data } = await supabase
-        .from('fee_installments')
-        .select('amount, paid_amount, status')
-        .eq('student_id', studentId)
-        .not('status', 'eq', 'waived')
-      if (data) {
-        const outstanding = data.reduce((sum, row) => {
-          const due = (row.amount || 0) - (row.paid_amount || 0)
-          return sum + Math.max(0, due)
-        }, 0)
-        setTotalOutstanding(outstanding)
+      const instId = installment?.id
+
+      // Fetch outstanding balance across all installments
+      if (studentId) {
+        const { data: instData } = await supabase
+          .from('fee_installments')
+          .select('amount, paid_amount, status')
+          .eq('student_id', studentId)
+          .not('status', 'eq', 'waived')
+        if (instData) {
+          const outstanding = instData.reduce((sum, row) => {
+            const due = (row.amount || 0) - (row.paid_amount || 0)
+            return sum + Math.max(0, due)
+          }, 0)
+          setTotalOutstanding(outstanding)
+        }
       }
+
+      // Fetch actual payment mode from fees table (most recent transaction for this installment)
+      if (instId) {
+        const { data: feeData } = await supabase
+          .from('fees')
+          .select('mode')
+          .eq('installment_id', instId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (feeData?.mode) {
+          setPaymentMode(feeData.mode)
+        }
+      }
+
       setLoadingBalance(false)
     }
     fetchPending()
-  }, [student?.id, installment?.student_id])
+  }, [student?.id, installment?.student_id, installment?.id])
 
   // Fallback to local calc if DB fetch fails
   const remaining = totalOutstanding !== null
@@ -103,7 +123,7 @@ export default function FeeReceipt({ installment, onClose }) {
         ['Batch', student?.batches?.name || '—'],
         ['Course', student?.batches?.courses?.name || '—'],
         ['Installment #', `Installment #${installment?.installment_number || '1'}`],
-        ['Payment Mode', (installment?.payment_mode || 'cash').toUpperCase()],
+        ['Payment Mode', (paymentMode || 'cash').toUpperCase()],
         ['Total Installment Amount', `Rs. ${totalInstAmount.toLocaleString('en-IN')}`],
         ['Amount Paid This Transaction', `Rs. ${paidNow.toLocaleString('en-IN')}`],
         ['Total Paid So Far', `Rs. ${totalPaidSoFar.toLocaleString('en-IN')}`],
@@ -197,7 +217,7 @@ export default function FeeReceipt({ installment, onClose }) {
             </div>
             <div className="flex justify-between py-1 border-b border-gray-100">
               <span className="text-gray-500 font-medium">Payment Mode</span>
-              <span className="font-bold text-gray-800 uppercase">{installment?.payment_mode || 'cash'}</span>
+              <span className="font-bold text-gray-800 uppercase">{paymentMode || 'cash'}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-gray-100">
               <span className="text-gray-500 font-medium">Total Installment Amount</span>
