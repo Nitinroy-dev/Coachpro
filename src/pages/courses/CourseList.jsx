@@ -209,9 +209,18 @@ export default function CourseList() {
                     <p className="text-base font-extrabold text-[#1E3A8A]">₹{(course.total_fee || 0).toLocaleString('en-IN')}</p>
                   </div>
                   <div className="bg-gradient-to-br from-purple-50/50 to-fuchsia-50/30 p-3 rounded-xl border border-purple-100/60">
-                    <p className="text-[10px] uppercase font-bold text-gray-400">Batches</p>
-                    <p className="text-base font-extrabold text-[#8B5CF6]">{course.batchesCount} Active</p>
+                    <p className="text-[10px] uppercase font-bold text-gray-400">Schedule</p>
+                    <p className="text-xs font-extrabold text-[#8B5CF6] capitalize mt-1">
+                      {course.fee_type === 'installments' 
+                        ? `${course.installments_count || 1} Installments` 
+                        : (course.fee_type || 'One-Time').replace('_', ' ')}
+                    </p>
                   </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl text-center">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase">Active Batches</p>
+                  <p className="text-sm font-extrabold text-gray-700">{course.batchesCount} configured</p>
                 </div>
               </div>
 
