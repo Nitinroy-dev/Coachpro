@@ -157,6 +157,7 @@ export default function Settings() {
         .from('users')
         .select('*')
         .eq('institute_id', instituteId)
+        .in('role', ['admin', 'staff'])
       if (error) throw error
       setStaffList(data || [])
     } catch (err) {
