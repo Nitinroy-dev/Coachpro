@@ -45,7 +45,11 @@ export default function FeeReceipt({ installment, onClose }) {
         }
       }
 
-      // Fetch actual payment mode from fees table (most recent transaction for this installment)
+      // Fetch actual payment mode from fees table
+      // Try by installment_id first, then fallback by receipt_number
+      const receiptNum = installment?.receipt_number
+      let fetchedMode = null
+
       if (instId) {
         const { data: feeData } = await supabase
           .from('fees')
@@ -54,9 +58,21 @@ export default function FeeReceipt({ installment, onClose }) {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle()
-        if (feeData?.mode) {
-          setPaymentMode(feeData.mode)
-        }
+        fetchedMode = feeData?.mode || null
+      }
+
+      // Fallback: look up by receipt_number (unique, always saved)
+      if (!fetchedMode && receiptNum) {
+        const { data: feeByReceipt } = await supabase
+          .from('fees')
+          .select('mode')
+          .eq('receipt_number', receiptNum)
+          .maybeSingle()
+        fetchedMode = feeByReceipt?.mode || null
+      }
+
+      if (fetchedMode) {
+        setPaymentMode(fetchedMode)
       }
 
       setLoadingBalance(false)
