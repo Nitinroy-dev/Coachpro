@@ -208,17 +208,20 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
           .select('*, students(*, batches(*, courses(*)))')
           .single()
 
-        setSavedInstallment(updatedInst ? {
-          ...updatedInst,
-          amount_paid_now: payingAmount,
-        } : {
-          ...selectedInstallment,
-          paid_amount: newPaidTotal,
-          amount_paid_now: payingAmount,
+        // Build receipt data — always use local known values for critical fields
+        // so the receipt is never wrong due to Supabase returning null columns
+        setSavedInstallment({
+          // Base: either the fresh DB record or the local snapshot
+          ...(updatedInst || selectedInstallment),
+          // Critical overrides — these are always correct from local state
+          amount: selectedInstallment?.amount || targetInstAmount,  // total installment fee (e.g. ₹15000)
+          paid_amount: newPaidTotal,                                 // cumulative total paid so far
+          amount_paid_now: payingAmount,                             // this transaction only (e.g. ₹1)
+          status: newStatus,
           receipt_number: receiptNo,
-          payment_mode: mode,
+          payment_mode: mode,                                        // 'upi', 'cash', etc.
           paid_date: form.paid_date,
-          students: selectedStudent
+          students: updatedInst?.students || selectedStudent,
         })
       }
 
