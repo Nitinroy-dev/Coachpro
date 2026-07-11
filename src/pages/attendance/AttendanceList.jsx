@@ -68,9 +68,8 @@ export default function AttendanceList() {
         query = query.eq('date', selectedDailyDate)
       } else if (activeReportTab === 'student') {
         if (selectedStudent) query = query.eq('student_id', selectedStudent)
-      } else if (activeReportTab === 'batch') {
-        if (selectedBatch) query = query.eq('batch_id', selectedBatch)
       }
+      // Note: For batch performance analytics, we query all attendance records for the institute to match properly
 
       const { data } = await query.order('date', { ascending: false })
       setAttendanceData(data || [])
