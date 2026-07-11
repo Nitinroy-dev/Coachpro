@@ -195,7 +195,6 @@ export default function NotificationCenter() {
         }
 
         // Try to send WhatsApp if configured
-        const phone = s.phone || s.parent_phone
         let waStatus = 'pending' // default: in-app only
         if (phone) {
           const response = await sendWhatsAppMessage(phone, formattedMsg)
