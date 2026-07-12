@@ -16,6 +16,9 @@ export default function VerifiedCredentials() {
     let active = true
 
     async function processVerification() {
+      // Allow 500ms for Supabase client to parse URL hash tokens and settle the new session
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       // First, check if we already have it in localStorage to prevent React StrictMode dual-mount wipes
       const cachedEmail = localStorage.getItem('temp_view_email')
       const cachedPass = localStorage.getItem('temp_view_pass')
