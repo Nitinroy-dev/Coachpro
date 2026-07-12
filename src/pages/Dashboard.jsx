@@ -514,7 +514,18 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions Bar */}
-      <div className={`grid grid-cols-2 sm:grid-cols-${isStaff ? '2' : '5'} gap-3`}>
+      <div className={`grid grid-cols-2 sm:grid-cols-${isStaff ? '2' : '6'} gap-3`}>
+        {!isStaff && (
+          <Button
+            size="lg"
+            icon={Layers}
+            fullWidth
+            className="shadow-md py-3.5 text-xs sm:text-sm bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 text-white border-0 transition-all hover:scale-[1.02] duration-200"
+            onClick={() => navigate('/courses')}
+          >
+            Add Batches/Courses
+          </Button>
+        )}
         {!isStaff && (
           <Button
             variant="primary"
