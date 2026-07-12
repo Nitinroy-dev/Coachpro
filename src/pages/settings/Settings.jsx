@@ -154,8 +154,43 @@ export default function Settings() {
   }, [institute])
 
   useEffect(() => {
-    if (instituteId && activeTab === 'staff') {
-      fetchStaff()
+    if (!instituteId || activeTab !== 'staff') return
+
+    fetchStaff()
+
+    // Real-time subscription to user updates (like verification changes)
+    const channel = supabase
+      .channel('staff_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'users',
+          filter: `institute_id=eq.${instituteId}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setStaffList((prev) => {
+              if (prev.some(s => s.id === payload.new.id)) return prev
+              if (payload.new.role === 'admin' || payload.new.role === 'staff') {
+                return [...prev, payload.new]
+              }
+              return prev
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            setStaffList((prev) =>
+              prev.map((s) => (s.id === payload.new.id ? payload.new : s))
+            )
+          } else if (payload.eventType === 'DELETE') {
+            setStaffList((prev) => prev.filter((s) => s.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
     }
   }, [instituteId, activeTab])
 
@@ -414,10 +449,10 @@ export default function Settings() {
         }
       })
 
-       // 2. Insert record in public.users immediately as a pending staff profile
+      // 2. Upsert record in public.users immediately as a pending staff profile
       const { error: dbErr } = await supabase
         .from('users')
-        .insert({
+        .upsert({
           id: authData.user.id,
           institute_id: instituteId,
           name: inviteForm.name.trim(),
@@ -425,11 +460,9 @@ export default function Settings() {
           role: inviteForm.role,
           is_verified: false,
           temp_password: password
-        })
+        }, { onConflict: 'id' })
 
-      if (dbErr) {
-        if (dbErr.code !== '23505') throw dbErr
-      }
+      if (dbErr) throw dbErr
 
       const targetEmail = inviteForm.email.trim()
       const targetName = inviteForm.name.trim()

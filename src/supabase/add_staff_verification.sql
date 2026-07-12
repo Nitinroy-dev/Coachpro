@@ -8,7 +8,10 @@
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS temp_password TEXT;
 
--- 2. Modify the signup trigger function to dynamically sync verification status
+-- 2. Enable Realtime for the users table to support instant UI refreshes
+ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+
+-- 3. Modify the signup trigger function to dynamically sync verification status
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
