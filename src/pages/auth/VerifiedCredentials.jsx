@@ -16,7 +16,24 @@ export default function VerifiedCredentials() {
     let active = true
 
     async function processVerification() {
-      // 1. Get current logged-in user session established by the redirect
+      // First, check if we already have it in localStorage to prevent React StrictMode dual-mount wipes
+      const cachedEmail = localStorage.getItem('temp_view_email')
+      const cachedPass = localStorage.getItem('temp_view_pass')
+      const cachedName = localStorage.getItem('temp_view_name')
+      
+      if (cachedEmail && cachedPass) {
+        if (active) {
+          setCredentials({
+            name: cachedName || 'Team Member',
+            email: cachedEmail,
+            password: cachedPass
+          })
+          setLoading(false)
+        }
+        return
+      }
+
+      // Get current logged-in user session established by the redirect
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         if (active) {
@@ -26,7 +43,7 @@ export default function VerifiedCredentials() {
       }
 
       try {
-        // 2. Fetch profile from public schema users
+        // Fetch profile
         const { data: profile, error: fetchErr } = await supabase
           .from('users')
           .select('*, institutes(*)')
@@ -37,7 +54,11 @@ export default function VerifiedCredentials() {
 
         if (profile) {
           if (profile.temp_password) {
-            // Save in local state to display to the user
+            // Save in localStorage for persistence during this display cycle
+            localStorage.setItem('temp_view_email', profile.email)
+            localStorage.setItem('temp_view_pass', profile.temp_password)
+            localStorage.setItem('temp_view_name', profile.name || '')
+
             if (active) {
               setCredentials({
                 name: profile.name,
@@ -46,7 +67,7 @@ export default function VerifiedCredentials() {
               })
             }
 
-            // 3. Send email confirmation in background if SMTP is configured
+            // Send email confirmation in background if SMTP is configured
             const resendApiKey = profile.institutes?.settings?.resend_api_key?.trim()
             const resendSender = profile.institutes?.settings?.resend_sender_email?.trim()
 
@@ -83,7 +104,7 @@ export default function VerifiedCredentials() {
               }
             }
 
-            // 4. Immediately clear temp_password from database for security
+            // Immediately clear temp_password from database for security
             await supabase
               .from('users')
               .update({
@@ -122,6 +143,11 @@ export default function VerifiedCredentials() {
   }
 
   const handleProceed = async () => {
+    // Clear localStorage values
+    localStorage.removeItem('temp_view_email')
+    localStorage.removeItem('temp_view_pass')
+    localStorage.removeItem('temp_view_name')
+
     // Clear user session so they have to type their credentials to log in
     await supabase.auth.signOut()
     navigate('/login', { replace: true })
