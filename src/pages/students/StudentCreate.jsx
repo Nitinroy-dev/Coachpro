@@ -267,7 +267,9 @@ export default function StudentCreate() {
           name: form.name.trim(),
           phone: form.phone.trim(),
           email: form.email.trim(),
-          role: 'student'
+          role: 'student',
+          temp_password: studentPassword,
+          is_verified: false
         })
       if (dbUserErr && dbUserErr.code !== '23505') throw dbUserErr
 
@@ -277,6 +279,9 @@ export default function StudentCreate() {
       // 2d. Create parent auth account if parent_email is provided
       if (form.parent_email.trim()) {
         try {
+          const resendApiKey = institute?.settings?.resend_api_key?.trim()
+          const resendSender = institute?.settings?.resend_sender_email?.trim()
+
           const parentRes = await fetch('/api/create-parent-account', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -286,6 +291,8 @@ export default function StudentCreate() {
               studentName: form.name.trim(),
               studentId: newStudent.id,
               instituteId: instituteId,
+              resendApiKey,
+              resendSender,
               redirectUrl: window.location.origin.includes('localhost')
                 ? 'https://coachpro-three.vercel.app/verified'
                 : `${window.location.origin}/verified`

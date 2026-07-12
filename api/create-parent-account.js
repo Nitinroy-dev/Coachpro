@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { parentEmail, parentName, studentName, studentId, instituteId, redirectUrl } = req.body
+  const { parentEmail, parentName, studentName, studentId, instituteId, resendApiKey, resendSender, redirectUrl } = req.body
 
   if (!parentEmail || !studentId || !instituteId) {
     return res.status(400).json({ error: 'Missing required parameters: parentEmail, studentId, instituteId.' })
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     // 5. Send verification email to parent using Supabase's built-in magic link
     const finalRedirectUrl = redirectUrl || 'https://coachpro-three.vercel.app/verified'
     
-    const { error: inviteErr } = await supabaseAdmin.auth.admin.generateLink({
+    const { data: linkData, error: inviteErr } = await supabaseAdmin.auth.admin.generateLink({
       type: 'signup',
       email: parentEmail,
       password: password,
@@ -94,16 +94,54 @@ export default async function handler(req, res) {
       }
     })
 
-    // Even if generateLink fails, the account is created. Parent can use forgot-password flow.
     if (inviteErr) {
       console.warn('Parent invite link generation warning:', inviteErr.message)
+    }
+
+    const actionLink = linkData?.properties?.action_link
+
+    // 6. Send the verification email to the parent using Resend
+    if (actionLink && resendApiKey && resendSender) {
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${resendApiKey}`
+          },
+          body: JSON.stringify({
+            from: resendSender,
+            to: parentEmail,
+            subject: `Batch Desk - Confirm Parent Account for ${studentName}`,
+            html: `
+              <div style="font-family: sans-serif; padding: 25px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <h2 style="color: #1e3a8a; margin: 0;">Batch Desk</h2>
+                  <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Coaching Institute Management System</p>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+                <p>Hello <strong>${parentName || 'Parent'}</strong>,</p>
+                <p>An account has been created for you as the parent of <strong>${studentName}</strong>.</p>
+                <p>To verify your email address and reveal your login credentials, please click the confirmation link below:</p>
+                <div style="text-align: center; margin: 25px 0;">
+                  <a href="${actionLink}" style="background-color: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">Confirm Email & Get Credentials</a>
+                </div>
+                <p style="font-size: 11px; color: #94a3b8;">If the button above does not work, copy and paste this link into your browser:</p>
+                <p style="font-size: 11px; font-family: monospace; word-break: break-all; color: #64748b;">${actionLink}</p>
+              </div>
+            `
+          })
+        })
+      } catch (emailErr) {
+        console.error('Failed to send Resend parent verification email:', emailErr)
+      }
     }
 
     return res.status(200).json({
       success: true,
       userId,
       password,
-      message: 'Parent account created successfully.'
+      message: 'Parent account created and verification email sent successfully.'
     })
   } catch (error) {
     console.error('Create parent account error:', error)
