@@ -414,9 +414,7 @@ export default function Settings() {
         }
       })
 
-      if (authErr) throw authErr
-
-      // 2. Insert record in public.users immediately as a pending staff profile
+       // 2. Insert record in public.users immediately as a pending staff profile
       const { error: dbErr } = await supabase
         .from('users')
         .insert({
@@ -425,7 +423,8 @@ export default function Settings() {
           name: inviteForm.name.trim(),
           phone: inviteForm.phone.trim(),
           role: inviteForm.role,
-          is_verified: false
+          is_verified: false,
+          temp_password: password
         })
 
       if (dbErr) {
@@ -435,68 +434,11 @@ export default function Settings() {
       const targetEmail = inviteForm.email.trim()
       const targetName = inviteForm.name.trim()
 
-      setGeneratedPassword(password)
       setCreatedStaffEmail(targetEmail)
       setCreatedStaffName(targetName)
-
-      // Try to send email automatically via Resend if configured
-      const resendApiKey = integrationsForm.resend_api_key?.trim()
-      const resendSender = integrationsForm.resend_sender_email?.trim()
-
-      let emailSentAutomatically = false
-      if (resendApiKey && resendSender) {
-        try {
-          const response = await fetch('/api/send-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              apiKey: resendApiKey,
-              from: resendSender,
-              to: targetEmail,
-              subject: 'Batch Desk - Staff Login Credentials',
-              html: `
-                <div style="font-family: sans-serif; padding: 25px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b;">
-                  <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: #1e3a8a; margin: 0;">Batch Desk</h2>
-                    <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Coaching Institute Management System</p>
-                  </div>
-                  <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-                  <p>Hello <strong>${targetName || 'Team Member'}</strong>,</p>
-                  <p>Your staff/teacher account has been successfully created. You can now access the management portal using the following credentials:</p>
-                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; font-family: monospace; font-size: 14px; margin: 20px 0; line-height: 1.6;">
-                    <strong style="color: #475569;">Email:</strong> ${targetEmail}<br/>
-                    <strong style="color: #475569;">Password:</strong> ${password}
-                  </div>
-                  <div style="text-align: center; margin: 25px 0;">
-                    <a href="${window.location.origin}/login" style="background-color: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">Log In to Portal</a>
-                  </div>
-                  <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">This is an automated security email containing temporary login details. Please verify your email first if required, and log in to get started.</p>
-                </div>
-              `
-            })
-          })
-
-          if (response.ok) {
-            emailSentAutomatically = true
-            setEmailAutoSent(true)
-            toast.success(`Staff account created & credentials emailed to ${targetEmail}!`)
-          } else {
-            console.warn('Auto email failed inside invite handler.')
-          }
-        } catch (mailErr) {
-          console.error('Failed to auto-send email on invite:', mailErr)
-        }
-      }
-
       setShowInviteModal(true)
-      if (emailSentAutomatically) {
-        toast.success(`Staff account created & credentials emailed automatically!`)
-      } else {
-        toast.success(`Staff account created! Please copy credentials or email them manually.`)
-      }
-
+      
+      toast.success(`Verification link sent to ${targetEmail}!`)
       setInviteForm({ name: '', email: '', phone: '', role: 'staff' })
       fetchStaff()
     } catch (err) {
@@ -1049,151 +991,34 @@ export default function Settings() {
           isOpen={true}
           onClose={() => {
             setShowInviteModal(false)
-            setGeneratedPassword('')
             setCreatedStaffEmail('')
             setCreatedStaffName('')
-            setEmailAutoSent(false)
           }}
-          title="Staff Account Created"
+          title="Verification Link Sent"
           footer={
             <Button
               variant="outline"
               onClick={() => {
                 setShowInviteModal(false)
-                setGeneratedPassword('')
                 setCreatedStaffEmail('')
                 setCreatedStaffName('')
-                setEmailAutoSent(false)
               }}
             >
-              Done
+              Close
             </Button>
           }
         >
           <div className="space-y-4">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-2xl text-center">
-              <CheckCircle2 size={36} className="text-green-600 mx-auto mb-2" />
-              <h3 className="font-bold text-green-950">Registration Complete</h3>
-              {emailAutoSent ? (
-                <p className="text-[11px] text-green-800 mt-1">Credentials have been automatically emailed to their Gmail! They must verify the email before logging in.</p>
-              ) : (
-                <p className="text-[11px] text-green-800 mt-1">An email confirmation link has been sent to their Gmail. They must verify it before logging in.</p>
-              )}
+            <div className="p-5 bg-green-50 border border-green-200 rounded-2xl text-center">
+              <CheckCircle2 size={36} className="text-green-600 mx-auto mb-2.5" />
+              <h3 className="font-bold text-green-950 text-base">Verification Link Dispatched</h3>
+              <p className="text-xs text-green-800 mt-2 leading-relaxed">
+                An invitation and verification link has been sent to <strong>{createdStaffEmail}</strong>.
+              </p>
+              <p className="text-[11px] text-green-700 mt-2.5 bg-green-100/50 p-2.5 rounded-xl border border-green-200/50">
+                Once the teacher clicks the verification link in their Gmail, their login credentials and password will be generated and emailed to them automatically.
+              </p>
             </div>
-
-            <p className="text-xs text-gray-600 font-semibold">Copy and share these temporary credentials with the staff member:</p>
-            
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-2 text-xs font-mono">
-              <div className="flex justify-between border-b border-gray-100 pb-1.5">
-                <span className="text-gray-400">Email:</span>
-                <span className="text-blue-900 font-bold select-all">{createdStaffEmail}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Password:</span>
-                <span className="text-orange-600 font-bold select-all">{generatedPassword}</span>
-              </div>
-            </div>
-
-            <Button
-              size="xs"
-              variant="success"
-              fullWidth
-              onClick={() => {
-                navigator.clipboard.writeText(`Email: ${createdStaffEmail}\nPassword: ${generatedPassword}`)
-                toast.success('Credentials copied to clipboard.')
-              }}
-            >
-              Copy Credentials to Clipboard
-            </Button>
-
-            <Button
-              size="xs"
-              variant="primary"
-              fullWidth
-              loading={emailSending}
-              onClick={async () => {
-                const resendApiKey = integrationsForm.resend_api_key?.trim()
-                const resendSender = integrationsForm.resend_sender_email?.trim()
-
-                if (resendApiKey && resendSender) {
-                  setEmailSending(true)
-                  try {
-                    const response = await fetch('/api/send-email', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        apiKey: resendApiKey,
-                        from: resendSender,
-                        to: createdStaffEmail,
-                        subject: 'Batch Desk - Staff Login Credentials',
-                        html: `
-                          <div style="font-family: sans-serif; padding: 25px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b;">
-                            <div style="text-align: center; margin-bottom: 20px;">
-                              <h2 style="color: #1e3a8a; margin: 0;">Batch Desk</h2>
-                              <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Coaching Institute Management System</p>
-                            </div>
-                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-                            <p>Hello <strong>${createdStaffName || 'Team Member'}</strong>,</p>
-                            <p>Your staff/teacher account has been successfully created. You can now access the management portal using the following credentials:</p>
-                            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; font-family: monospace; font-size: 14px; margin: 20px 0; line-height: 1.6;">
-                              <strong style="color: #475569;">Email:</strong> ${createdStaffEmail}<br/>
-                              <strong style="color: #475569;">Password:</strong> ${generatedPassword}
-                            </div>
-                            <div style="text-align: center; margin: 25px 0;">
-                              <a href="${window.location.origin}/login" style="background-color: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">Log In to Portal</a>
-                            </div>
-                            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">This is an automated security email containing temporary login details. Please update your password after logging in for security.</p>
-                          </div>
-                        `
-                      })
-                    })
-
-                    if (!response.ok) {
-                      const errData = await response.json()
-                      throw new Error(errData.message || errData.error || 'Failed to dispatch email')
-                    }
-
-                    toast.success(`Credentials emailed successfully to ${createdStaffEmail}!`)
-                  } catch (err) {
-                    console.error('API Send Error:', err)
-                    toast.error(`SMTP Error: ${err.message}. Falling back to default mail app...`)
-                    // Fallback to mailto
-                    const subject = encodeURIComponent('Batch Desk - Staff Login Credentials')
-                    const body = encodeURIComponent(
-                      `Hello ${createdStaffName || 'Team Member'},\n\n` +
-                      `Your staff account has been created for Batch Desk.\n\n` +
-                      `Here are your login credentials:\n` +
-                      `- Email: ${createdStaffEmail}\n` +
-                      `- Password: ${generatedPassword}\n\n` +
-                      `Login URL: ${window.location.origin}/login\n\n` +
-                      `Best regards,\n` +
-                      `Batch Desk Administrator`
-                    )
-                    window.location.href = `mailto:${createdStaffEmail}?subject=${subject}&body=${body}`
-                  } finally {
-                    setEmailSending(false)
-                  }
-                } else {
-                  // Standard mailto fallback
-                  const subject = encodeURIComponent('Batch Desk - Staff Login Credentials')
-                  const body = encodeURIComponent(
-                    `Hello ${createdStaffName || 'Team Member'},\n\n` +
-                    `Your staff account has been created for Batch Desk.\n\n` +
-                    `Here are your login credentials:\n` +
-                    `- Email: ${createdStaffEmail}\n` +
-                    `- Password: ${generatedPassword}\n\n` +
-                    `Login URL: ${window.location.origin}/login\n\n` +
-                    `Best regards,\n` +
-                    `Batch Desk Administrator`
-                  )
-                  window.location.href = `mailto:${createdStaffEmail}?subject=${subject}&body=${body}`
-                }
-              }}
-            >
-              Email Credentials to Staff Member
-            </Button>
           </div>
         </Modal>
       )}

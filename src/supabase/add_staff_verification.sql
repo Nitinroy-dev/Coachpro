@@ -4,8 +4,9 @@
 -- (Supabase Dashboard > SQL Editor > New Query > Run)
 -- ==============================================================
 
--- 1. Add is_verified column to users table
+-- 1. Add is_verified and temp_password columns to users table
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS temp_password TEXT;
 
 -- 2. Modify the signup trigger function to dynamically sync verification status
 CREATE OR REPLACE FUNCTION public.handle_new_user()
