@@ -1078,7 +1078,7 @@ export default function Settings() {
 
                     if (!response.ok) {
                       const errData = await response.json()
-                      throw new Error(errData.error || 'Failed to dispatch email')
+                      throw new Error(errData.message || errData.error || 'Failed to dispatch email')
                     }
 
                     toast.success(`Credentials emailed successfully to ${createdStaffEmail}!`)
