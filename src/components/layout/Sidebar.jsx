@@ -15,6 +15,7 @@ export default function Sidebar({ open = true, onClose }) {
 
   const isStudent = profile?.role === 'student'
   const isStaff = profile?.role === 'staff'
+  const isParent = profile?.role === 'parent'
 
   const navItems = isSuperAdmin ? [
     { to: '/superadmin', icon: ShieldCheck, label: 'Superadmin Operations' }
@@ -23,6 +24,11 @@ export default function Sidebar({ open = true, onClose }) {
     { to: '/student/attendance', icon: CalendarCheck, label: 'My Attendance' },
     { to: '/student/fees', icon: CreditCard, label: 'Fees & Payments' },
     { to: '/student/exams', icon: BookOpen, label: 'Timetable & Exams' },
+  ] : isParent ? [
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/parent/attendance', icon: CalendarCheck, label: "Child's Attendance" },
+    { to: '/parent/fees', icon: CreditCard, label: 'Fees & Payments' },
+    { to: '/parent/exams', icon: BookOpen, label: 'Timetable & Exams' },
   ] : isStaff ? [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/students', icon: Users, label: 'Students' },

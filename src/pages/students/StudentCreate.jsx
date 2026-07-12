@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UserPlus, Upload, CheckCircle2, ArrowRight, ArrowLeft,
-  GraduationCap, BookOpen, Layers, CreditCard, Sparkles, User, Shield
+  GraduationCap, BookOpen, Layers, CreditCard, Sparkles, User, Shield, Phone, Mail, Key
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { createClient } from '@supabase/supabase-js'
@@ -52,7 +52,10 @@ export default function StudentCreate() {
   const [showCredentialsModal, setShowCredentialsModal] = useState(false)
   const [generatedPassword, setGeneratedPassword] = useState('')
   const [createdStudentEmail, setCreatedStudentEmail] = useState('')
+  const [parentPassword, setParentPassword] = useState('')
+  const [createdParentEmail, setCreatedParentEmail] = useState('')
   const [tempStudent, setTempStudent] = useState(null)
+  const [phoneVerified, setPhoneVerified] = useState(false)
 
   // Photo state
   const [photoFile, setPhotoFile] = useState(null)
@@ -65,6 +68,7 @@ export default function StudentCreate() {
     parent_name: '',
     parent_phone: '',
     email: '',
+    parent_email: '',
     dob: '',
     address: '',
     course_id: '',
@@ -75,7 +79,7 @@ export default function StudentCreate() {
     discount_reason: '',
     is_scholarship: false,
     scholarship_val: '',
-    scholarship_type: 'percent', // percent | fixed
+    scholarship_type: 'percent',
   })
 
   useEffect(() => {
@@ -201,11 +205,13 @@ export default function StudentCreate() {
         parent_name: form.parent_name.trim(),
         parent_phone: form.parent_phone.trim(),
         email: form.email.trim() || null,
+        parent_email: form.parent_email.trim() || null,
         dob: form.dob || null,
         address: form.address.trim() || null,
         batch_id: form.batch_id,
         photo_url: photoUrl,
         status: 'active',
+        phone_verified: phoneVerified,
         enrolled_at: form.enrolled_at ? `${form.enrolled_at}T00:00:00.000Z` : new Date().toISOString(),
       }
 
@@ -267,6 +273,36 @@ export default function StudentCreate() {
 
       setGeneratedPassword(studentPassword)
       setCreatedStudentEmail(form.email.trim())
+
+      // 2d. Create parent auth account if parent_email is provided
+      if (form.parent_email.trim()) {
+        try {
+          const parentRes = await fetch('/api/create-parent-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentEmail: form.parent_email.trim(),
+              parentName: form.parent_name.trim(),
+              studentName: form.name.trim(),
+              studentId: newStudent.id,
+              instituteId: instituteId,
+              redirectUrl: window.location.origin.includes('localhost')
+                ? 'https://coachpro-three.vercel.app/verified'
+                : `${window.location.origin}/verified`
+            })
+          })
+          const parentData = await parentRes.json()
+          if (parentRes.ok && parentData.password) {
+            setParentPassword(parentData.password)
+            setCreatedParentEmail(form.parent_email.trim())
+          } else {
+            console.warn('Parent account creation returned non-ok:', parentData)
+          }
+        } catch (parentErr) {
+          console.error('Parent account creation failed:', parentErr)
+          // Non-blocking: student is still enrolled even if parent account fails
+        }
+      }
 
       // 3. Auto-generate Fee Installments
       const selectedCourse = courses.find(c => c.id === form.course_id)
@@ -340,6 +376,7 @@ export default function StudentCreate() {
       parent_name: '',
       parent_phone: '',
       email: '',
+      parent_email: '',
       dob: '',
       address: '',
       course_id: '',
@@ -356,6 +393,9 @@ export default function StudentCreate() {
     setPhotoPreview('')
     setSubmittedStudent(null)
     setError('')
+    setPhoneVerified(false)
+    setParentPassword('')
+    setCreatedParentEmail('')
   }
 
   // Filtered batches based on course
@@ -474,12 +514,19 @@ export default function StudentCreate() {
                 required
               />
               <Input
-                label="Email Address *"
+                label="Student Email Address *"
                 type="email"
                 placeholder="e.g. rahul@example.com"
                 value={form.email}
                 onChange={set('email')}
                 required
+              />
+              <Input
+                label="Parent Email Address"
+                type="email"
+                placeholder="e.g. parent@example.com"
+                value={form.parent_email}
+                onChange={set('parent_email')}
               />
               <Input
                 label="Date of Birth"
@@ -488,6 +535,44 @@ export default function StudentCreate() {
                 onChange={set('dob')}
               />
             </div>
+
+            {/* Phone Verification Toggle */}
+            <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${phoneVerified ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  <Phone size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-900">Phone Number Verified</p>
+                  <p className="text-[10px] text-gray-500">Mark as verified after confirming via call or WhatsApp</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPhoneVerified(!phoneVerified)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${phoneVerified ? 'bg-green-500' : 'bg-gray-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${phoneVerified ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            {/* Email Verification Status Badges */}
+            {(form.email || form.parent_email) && (
+              <div className="flex flex-wrap gap-2 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                <p className="text-[10px] font-bold text-blue-800 uppercase w-full mb-1">Verification emails will be sent to:</p>
+                {form.email && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-blue-200 rounded-lg text-[11px] font-semibold text-blue-900">
+                    <Mail size={12} className="text-blue-500" /> {form.email} <span className="text-[9px] text-gray-400">(Student)</span>
+                  </span>
+                )}
+                {form.parent_email && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[11px] font-semibold text-orange-900">
+                    <Mail size={12} className="text-orange-500" /> {form.parent_email} <span className="text-[9px] text-gray-400">(Parent)</span>
+                  </span>
+                )}
+              </div>
+            )}
+
             <Input
               label="Address"
               placeholder="Full residential address..."
@@ -650,8 +735,10 @@ export default function StudentCreate() {
             setSubmittedStudent(tempStudent)
             setGeneratedPassword('')
             setCreatedStudentEmail('')
+            setParentPassword('')
+            setCreatedParentEmail('')
           }}
-          title="Student Account Created"
+          title="Accounts Created Successfully"
           footer={
             <Button
               variant="outline"
@@ -660,6 +747,8 @@ export default function StudentCreate() {
                 setSubmittedStudent(tempStudent)
                 setGeneratedPassword('')
                 setCreatedStudentEmail('')
+                setParentPassword('')
+                setCreatedParentEmail('')
               }}
             >
               Done
@@ -670,32 +759,59 @@ export default function StudentCreate() {
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl text-center">
               <CheckCircle2 size={36} className="text-green-600 mx-auto mb-2" />
               <h3 className="font-bold text-green-950">Registration Complete</h3>
-              <p className="text-[11px] text-green-800 mt-1">An email confirmation link has been sent to their Gmail. They must click it to verify before they can log in.</p>
+              <p className="text-[11px] text-green-800 mt-1">Email confirmation links have been sent. They must click to verify before logging in.</p>
             </div>
 
-            <p className="text-xs text-gray-600 font-semibold">Copy and share these temporary credentials with the student:</p>
-            
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-2 text-xs font-mono">
-              <div className="flex justify-between border-b border-gray-100 pb-1.5">
-                <span className="text-gray-400">Email:</span>
-                <span className="text-blue-900 font-bold select-all">{createdStudentEmail}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Password:</span>
-                <span className="text-orange-600 font-bold select-all">{generatedPassword}</span>
+            {/* Student credentials */}
+            <div>
+              <p className="text-xs text-gray-600 font-bold flex items-center gap-1.5 mb-2">
+                <User size={14} className="text-blue-600" /> Student Login Credentials
+              </p>
+              <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl space-y-2 text-xs font-mono">
+                <div className="flex justify-between border-b border-blue-100 pb-1.5">
+                  <span className="text-gray-400">Email:</span>
+                  <span className="text-blue-900 font-bold select-all">{createdStudentEmail}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Password:</span>
+                  <span className="text-orange-600 font-bold select-all">{generatedPassword}</span>
+                </div>
               </div>
             </div>
+
+            {/* Parent credentials */}
+            {createdParentEmail && parentPassword && (
+              <div>
+                <p className="text-xs text-gray-600 font-bold flex items-center gap-1.5 mb-2">
+                  <Key size={14} className="text-orange-600" /> Parent Login Credentials
+                </p>
+                <div className="p-3.5 bg-orange-50 border border-orange-200 rounded-2xl space-y-2 text-xs font-mono">
+                  <div className="flex justify-between border-b border-orange-100 pb-1.5">
+                    <span className="text-gray-400">Email:</span>
+                    <span className="text-orange-900 font-bold select-all">{createdParentEmail}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Password:</span>
+                    <span className="text-orange-600 font-bold select-all">{parentPassword}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <Button
               size="xs"
               variant="success"
               fullWidth
               onClick={() => {
-                navigator.clipboard.writeText(`Email: ${createdStudentEmail}\nPassword: ${generatedPassword}`)
-                toast.success('Credentials copied to clipboard.')
+                let text = `Student Credentials:\nEmail: ${createdStudentEmail}\nPassword: ${generatedPassword}`
+                if (createdParentEmail && parentPassword) {
+                  text += `\n\nParent Credentials:\nEmail: ${createdParentEmail}\nPassword: ${parentPassword}`
+                }
+                navigator.clipboard.writeText(text)
+                toast.success('All credentials copied to clipboard.')
               }}
             >
-              Copy Credentials to Clipboard
+              Copy All Credentials to Clipboard
             </Button>
           </div>
         </Modal>

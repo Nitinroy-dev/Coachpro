@@ -40,6 +40,9 @@ import Billing from './pages/billing/Billing'
 import StudentAttendance from './pages/student/StudentAttendance'
 import StudentFees from './pages/student/StudentFees'
 import StudentExams from './pages/student/StudentExams'
+import ParentAttendance from './pages/parent/ParentAttendance'
+import ParentFees from './pages/parent/ParentFees'
+import ParentExams from './pages/parent/ParentExams'
 
 export default function App() {
   useEffect(() => {
@@ -103,6 +106,11 @@ export default function App() {
                 <Route path="/student/attendance" element={<StudentAttendance />} />
                 <Route path="/student/fees" element={<StudentFees />} />
                 <Route path="/student/exams" element={<StudentExams />} />
+
+                {/* Parent routes */}
+                <Route path="/parent/attendance" element={<ParentAttendance />} />
+                <Route path="/parent/fees" element={<ParentFees />} />
+                <Route path="/parent/exams" element={<ParentExams />} />
               </Route>
             </Route>
 
