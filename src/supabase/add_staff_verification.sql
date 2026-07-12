@@ -4,9 +4,10 @@
 -- (Supabase Dashboard > SQL Editor > New Query > Run)
 -- ==============================================================
 
--- 1. Add is_verified and temp_password columns to users table
+-- 1. Add is_verified, temp_password, and email columns to users table
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS temp_password TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email TEXT;
 
 -- 2. Enable Realtime for the users table to support instant UI refreshes
 ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
@@ -93,8 +94,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Sync existing users verification status
+-- 4. Sync existing users verification status and email addresses
 UPDATE public.users u
-SET is_verified = (a.email_confirmed_at IS NOT NULL)
+SET 
+  is_verified = (a.email_confirmed_at IS NOT NULL),
+  email = a.email
 FROM auth.users a
 WHERE u.id = a.id;

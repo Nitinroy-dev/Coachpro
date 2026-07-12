@@ -460,6 +460,7 @@ export default function Settings() {
           institute_id: instituteId,
           name: inviteForm.name.trim(),
           phone: inviteForm.phone.trim(),
+          email: inviteForm.email.trim(),
           role: inviteForm.role,
           is_verified: false,
           temp_password: password

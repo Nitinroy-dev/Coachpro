@@ -260,6 +260,7 @@ export default function StudentCreate() {
           institute_id: instituteId,
           name: form.name.trim(),
           phone: form.phone.trim(),
+          email: form.email.trim(),
           role: 'student'
         })
       if (dbUserErr && dbUserErr.code !== '23505') throw dbUserErr
