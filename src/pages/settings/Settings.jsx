@@ -423,19 +423,76 @@ export default function Settings() {
           institute_id: instituteId,
           name: inviteForm.name.trim(),
           phone: inviteForm.phone.trim(),
-          role: inviteForm.role
+          role: inviteForm.role,
+          is_verified: false
         })
 
       if (dbErr) {
         if (dbErr.code !== '23505') throw dbErr
       }
 
+      const targetEmail = inviteForm.email.trim()
+      const targetName = inviteForm.name.trim()
+
       setGeneratedPassword(password)
-      setCreatedStaffEmail(inviteForm.email.trim())
-      setCreatedStaffName(inviteForm.name.trim())
-      setShowInviteModal(true)
-      
-      toast.success(`Staff account created successfully!`)
+      setCreatedStaffEmail(targetEmail)
+      setCreatedStaffName(targetName)
+
+      // Try to send email automatically via Resend if configured
+      const resendApiKey = integrationsForm.resend_api_key?.trim()
+      const resendSender = integrationsForm.resend_sender_email?.trim()
+
+      let emailSentAutomatically = false
+      if (resendApiKey && resendSender) {
+        try {
+          const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: resendApiKey,
+              from: resendSender,
+              to: targetEmail,
+              subject: 'Batch Desk - Staff Login Credentials',
+              html: `
+                <div style="font-family: sans-serif; padding: 25px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b;">
+                  <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #1e3a8a; margin: 0;">Batch Desk</h2>
+                    <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Coaching Institute Management System</p>
+                  </div>
+                  <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+                  <p>Hello <strong>${targetName || 'Team Member'}</strong>,</p>
+                  <p>Your staff/teacher account has been successfully created. You can now access the management portal using the following credentials:</p>
+                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; font-family: monospace; font-size: 14px; margin: 20px 0; line-height: 1.6;">
+                    <strong style="color: #475569;">Email:</strong> ${targetEmail}<br/>
+                    <strong style="color: #475569;">Password:</strong> ${password}
+                  </div>
+                  <div style="text-align: center; margin: 25px 0;">
+                    <a href="${window.location.origin}/login" style="background-color: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">Log In to Portal</a>
+                  </div>
+                  <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">This is an automated security email containing temporary login details. Please verify your email first if required, and log in to get started.</p>
+                </div>
+              `
+            })
+          })
+
+          if (response.ok) {
+            emailSentAutomatically = true
+            toast.success(`Staff account created & credentials emailed to ${targetEmail}!`)
+          } else {
+            console.warn('Auto email failed inside invite handler.')
+          }
+        } catch (mailErr) {
+          console.error('Failed to auto-send email on invite:', mailErr)
+        }
+      }
+
+      if (!emailSentAutomatically) {
+        setShowInviteModal(true)
+        toast.success(`Staff account created! Copy credentials below since email auto-send is not set up.`)
+      }
+
       setInviteForm({ name: '', email: '', phone: '', role: 'staff' })
       fetchStaff()
     } catch (err) {
@@ -951,10 +1008,15 @@ export default function Settings() {
                           <p className="text-[10px] text-gray-400">{staff.email || 'Email missing'}</p>
                         </td>
                         <td className="p-3 text-gray-600 font-semibold">{staff.phone || '—'}</td>
-                        <td className="p-3">
-                          <Badge variant={staff.role === 'admin' ? 'success' : 'primary'}>
-                            {staff.role === 'admin' ? 'Administrator' : 'Staff Member'}
-                          </Badge>
+                        <td className="p-3 space-y-1">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant={staff.role === 'admin' ? 'success' : 'primary'}>
+                              {staff.role === 'admin' ? 'Administrator' : 'Staff Member'}
+                            </Badge>
+                            <Badge variant={staff.is_verified ? 'success' : 'warning'}>
+                              {staff.is_verified ? 'Verified ✅' : 'Pending Verification ⏳'}
+                            </Badge>
+                          </div>
                         </td>
                         <td className="p-3 text-right">
                           <Button
