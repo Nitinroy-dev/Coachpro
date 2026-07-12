@@ -991,15 +991,15 @@ export default function Settings() {
                 const body = encodeURIComponent(
                   `Hello ${createdStaffName || 'Team Member'},\n\n` +
                   `Your staff account has been created for Batch Desk.\n\n` +
-                  `Before you can log in, please make sure to click the verification link in the confirmation email you just received.\n\n` +
                   `Here are your login credentials:\n` +
                   `- Email: ${createdStaffEmail}\n` +
-                  `- Temporary Password: ${generatedPassword}\n\n` +
+                  `- Password: ${generatedPassword}\n\n` +
                   `Login URL: ${window.location.origin}/login\n\n` +
+                  `Please verify your email if required and log in using the credentials above.\n\n` +
                   `Best regards,\n` +
                   `Batch Desk Administrator`
                 )
-                window.open(`mailto:${createdStaffEmail}?subject=${subject}&body=${body}`, '_blank')
+                window.location.href = `mailto:${createdStaffEmail}?subject=${subject}&body=${body}`
               }}
             >
               Email Credentials to Staff Member
