@@ -95,6 +95,7 @@ export default function Settings() {
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', phone: '', role: 'staff' })
   const [generatedPassword, setGeneratedPassword] = useState('')
   const [createdStaffEmail, setCreatedStaffEmail] = useState('')
+  const [createdStaffName, setCreatedStaffName] = useState('')
   const [showInviteModal, setShowInviteModal] = useState(false)
 
   useEffect(() => {
@@ -421,6 +422,7 @@ export default function Settings() {
 
       setGeneratedPassword(password)
       setCreatedStaffEmail(inviteForm.email.trim())
+      setCreatedStaffName(inviteForm.name.trim())
       setShowInviteModal(true)
       
       toast.success(`Staff account created successfully!`)
@@ -931,6 +933,7 @@ export default function Settings() {
             setShowInviteModal(false)
             setGeneratedPassword('')
             setCreatedStaffEmail('')
+            setCreatedStaffName('')
           }}
           title="Staff Account Created"
           footer={
@@ -940,6 +943,7 @@ export default function Settings() {
                 setShowInviteModal(false)
                 setGeneratedPassword('')
                 setCreatedStaffEmail('')
+                setCreatedStaffName('')
               }}
             >
               Done
@@ -976,6 +980,29 @@ export default function Settings() {
               }}
             >
               Copy Credentials to Clipboard
+            </Button>
+
+            <Button
+              size="xs"
+              variant="primary"
+              fullWidth
+              onClick={() => {
+                const subject = encodeURIComponent('Batch Desk - Staff Login Credentials')
+                const body = encodeURIComponent(
+                  `Hello ${createdStaffName || 'Team Member'},\n\n` +
+                  `Your staff account has been created for Batch Desk.\n\n` +
+                  `Before you can log in, please make sure to click the verification link in the confirmation email you just received.\n\n` +
+                  `Here are your login credentials:\n` +
+                  `- Email: ${createdStaffEmail}\n` +
+                  `- Temporary Password: ${generatedPassword}\n\n` +
+                  `Login URL: ${window.location.origin}/login\n\n` +
+                  `Best regards,\n` +
+                  `Batch Desk Administrator`
+                )
+                window.open(`mailto:${createdStaffEmail}?subject=${subject}&body=${body}`, '_blank')
+              }}
+            >
+              Email Credentials to Staff Member
             </Button>
           </div>
         </Modal>
