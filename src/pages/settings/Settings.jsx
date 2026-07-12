@@ -449,6 +449,9 @@ export default function Settings() {
         }
       })
 
+      // Wait 800ms to allow Supabase Auth transaction to fully commit and avoid users_id_fkey foreign key violations
+      await new Promise(resolve => setTimeout(resolve, 800))
+
       // 2. Upsert record in public.users immediately as a pending staff profile
       const { error: dbErr } = await supabase
         .from('users')

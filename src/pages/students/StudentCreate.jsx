@@ -249,6 +249,9 @@ export default function StudentCreate() {
 
       if (authErr) throw authErr
 
+      // Wait 800ms to allow Supabase Auth transaction to fully commit and avoid users_id_fkey foreign key violations
+      await new Promise(resolve => setTimeout(resolve, 800))
+
       // 2c. Create database users record to match auth immediately
       const { error: dbUserErr } = await supabase
         .from('users')
