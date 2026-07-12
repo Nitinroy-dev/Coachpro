@@ -236,8 +236,8 @@ export default function StudentCreate() {
         password: studentPassword,
         options: {
           emailRedirectTo: window.location.origin.includes('localhost')
-            ? 'https://coachpro-three.vercel.app/login'
-            : `${window.location.origin}/login`,
+            ? 'https://coachpro-three.vercel.app/verified'
+            : `${window.location.origin}/verified`,
           data: {
             name: form.name.trim(),
             phone: form.phone.trim(),

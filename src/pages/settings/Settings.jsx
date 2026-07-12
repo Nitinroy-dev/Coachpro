@@ -438,8 +438,8 @@ export default function Settings() {
         password: password,
         options: {
           emailRedirectTo: window.location.origin.includes('localhost')
-            ? 'https://coachpro-three.vercel.app/login'
-            : `${window.location.origin}/login`,
+            ? 'https://coachpro-three.vercel.app/verified'
+            : `${window.location.origin}/verified`,
           data: {
             name: inviteForm.name.trim(),
             phone: inviteForm.phone.trim(),

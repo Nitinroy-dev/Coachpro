@@ -14,6 +14,7 @@ import Register from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
 import Expired from './pages/auth/Expired'
+import VerifiedCredentials from './pages/auth/VerifiedCredentials'
 
 // Public landing pages
 import Pricing from './pages/pricing/Pricing'
@@ -75,6 +76,7 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/expired" element={<Expired />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/verified" element={<VerifiedCredentials />} />
 
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
