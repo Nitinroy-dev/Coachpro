@@ -101,6 +101,7 @@ export default function Settings() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [emailSending, setEmailSending] = useState(false)
   const [showResendKey, setShowResendKey] = useState(false)
+  const [emailAutoSent, setEmailAutoSent] = useState(false)
 
   useEffect(() => {
     if (institute) {
@@ -479,6 +480,7 @@ export default function Settings() {
 
           if (response.ok) {
             emailSentAutomatically = true
+            setEmailAutoSent(true)
             toast.success(`Staff account created & credentials emailed to ${targetEmail}!`)
           } else {
             console.warn('Auto email failed inside invite handler.')
@@ -488,9 +490,11 @@ export default function Settings() {
         }
       }
 
-      if (!emailSentAutomatically) {
-        setShowInviteModal(true)
-        toast.success(`Staff account created! Copy credentials below since email auto-send is not set up.`)
+      setShowInviteModal(true)
+      if (emailSentAutomatically) {
+        toast.success(`Staff account created & credentials emailed automatically!`)
+      } else {
+        toast.success(`Staff account created! Please copy credentials or email them manually.`)
       }
 
       setInviteForm({ name: '', email: '', phone: '', role: 'staff' })
@@ -1048,6 +1052,7 @@ export default function Settings() {
             setGeneratedPassword('')
             setCreatedStaffEmail('')
             setCreatedStaffName('')
+            setEmailAutoSent(false)
           }}
           title="Staff Account Created"
           footer={
@@ -1058,6 +1063,7 @@ export default function Settings() {
                 setGeneratedPassword('')
                 setCreatedStaffEmail('')
                 setCreatedStaffName('')
+                setEmailAutoSent(false)
               }}
             >
               Done
@@ -1068,7 +1074,11 @@ export default function Settings() {
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl text-center">
               <CheckCircle2 size={36} className="text-green-600 mx-auto mb-2" />
               <h3 className="font-bold text-green-950">Registration Complete</h3>
-              <p className="text-[11px] text-green-800 mt-1">An email confirmation link has been sent to their Gmail. They must verify it before logging in.</p>
+              {emailAutoSent ? (
+                <p className="text-[11px] text-green-800 mt-1">Credentials have been automatically emailed to their Gmail! They must verify the email before logging in.</p>
+              ) : (
+                <p className="text-[11px] text-green-800 mt-1">An email confirmation link has been sent to their Gmail. They must verify it before logging in.</p>
+              )}
             </div>
 
             <p className="text-xs text-gray-600 font-semibold">Copy and share these temporary credentials with the staff member:</p>
