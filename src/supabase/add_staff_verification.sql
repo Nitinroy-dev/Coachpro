@@ -9,8 +9,8 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT fa
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS temp_password TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email TEXT;
 
--- 2. Enable Realtime for the users table to support instant UI refreshes
-ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+-- 2. Enable Realtime for the users table (commented out as it might already be enabled)
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
 
 -- 3. Modify the signup trigger function to dynamically sync verification status
 CREATE OR REPLACE FUNCTION public.handle_new_user()
