@@ -62,7 +62,9 @@ export default function Settings() {
     wati_api_endpoint: '',
     wati_sender_number: '',
     upi_id: '',
-    upi_name: ''
+    upi_name: '',
+    resend_api_key: '',
+    resend_sender_email: ''
   })
   const [showRzpSecret, setShowRzpSecret] = useState(false)
   const [showWatiToken, setShowWatiToken] = useState(false)
@@ -97,6 +99,8 @@ export default function Settings() {
   const [createdStaffEmail, setCreatedStaffEmail] = useState('')
   const [createdStaffName, setCreatedStaffName] = useState('')
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [emailSending, setEmailSending] = useState(false)
+  const [showResendKey, setShowResendKey] = useState(false)
 
   useEffect(() => {
     if (institute) {
@@ -118,7 +122,9 @@ export default function Settings() {
         wati_api_endpoint: settings.wati_api_endpoint || '',
         wati_sender_number: settings.wati_sender_number || '',
         upi_id: settings.upi_id || '',
-        upi_name: settings.upi_name || ''
+        upi_name: settings.upi_name || '',
+        resend_api_key: settings.resend_api_key || '',
+        resend_sender_email: settings.resend_sender_email || ''
       })
 
       setRzpConnected(!!settings.razorpay_key_id)
@@ -258,7 +264,9 @@ export default function Settings() {
         wati_api_endpoint: integrationsForm.wati_api_endpoint.trim(),
         wati_sender_number: integrationsForm.wati_sender_number.trim(),
         upi_id: integrationsForm.upi_id.trim(),
-        upi_name: integrationsForm.upi_name.trim()
+        upi_name: integrationsForm.upi_name.trim(),
+        resend_api_key: integrationsForm.resend_api_key.trim(),
+        resend_sender_email: integrationsForm.resend_sender_email.trim()
       }
 
       const { error } = await supabase
@@ -713,6 +721,48 @@ export default function Settings() {
             </div>
           </Card>
 
+          {/* Resend Email API Card */}
+          <Card className="p-5">
+            <CardHeader className="p-0 pb-4 border-b border-gray-100 flex flex-row items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail size={18} className="text-blue-600" /> Resend Domain Email Integration
+              </CardTitle>
+              <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${integrationsForm.resend_api_key ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                {integrationsForm.resend_api_key ? 'Connected ✅' : 'Not Connected ❌'}
+              </span>
+            </CardHeader>
+
+            <div className="pt-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="relative">
+                  <Input
+                    label="Resend API Key"
+                    type={showResendKey ? 'text' : 'password'}
+                    placeholder="re_xxxxxxxx"
+                    value={integrationsForm.resend_api_key}
+                    onChange={(e) => setIntegrationsForm({ ...integrationsForm, resend_api_key: e.target.value })}
+                    icon={Key}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResendKey(!showResendKey)}
+                    className="absolute right-3.5 top-8.5 text-gray-400 hover:text-gray-600"
+                  >
+                    {showResendKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <Input
+                  label="Sender Domain Email Address"
+                  placeholder="e.g. no-reply@yourdomain.com"
+                  value={integrationsForm.resend_sender_email}
+                  onChange={(e) => setIntegrationsForm({ ...integrationsForm, resend_sender_email: e.target.value })}
+                  icon={Mail}
+                />
+              </div>
+              <p className="text-[10px] text-gray-400">Enter your Resend API key and verified custom domain sender email. This allows the system to send credentials notifications automatically from your custom domain.</p>
+            </div>
+          </Card>
+
           {/* Actions Save */}
           <div className="flex justify-end">
             <Button type="submit" loading={loading} icon={Save} className="shadow-md">
@@ -986,20 +1036,86 @@ export default function Settings() {
               size="xs"
               variant="primary"
               fullWidth
-              onClick={() => {
-                const subject = encodeURIComponent('Batch Desk - Staff Login Credentials')
-                const body = encodeURIComponent(
-                  `Hello ${createdStaffName || 'Team Member'},\n\n` +
-                  `Your staff account has been created for Batch Desk.\n\n` +
-                  `Here are your login credentials:\n` +
-                  `- Email: ${createdStaffEmail}\n` +
-                  `- Password: ${generatedPassword}\n\n` +
-                  `Login URL: ${window.location.origin}/login\n\n` +
-                  `Please verify your email if required and log in using the credentials above.\n\n` +
-                  `Best regards,\n` +
-                  `Batch Desk Administrator`
-                )
-                window.location.href = `mailto:${createdStaffEmail}?subject=${subject}&body=${body}`
+              loading={emailSending}
+              onClick={async () => {
+                const resendApiKey = integrationsForm.resend_api_key?.trim()
+                const resendSender = integrationsForm.resend_sender_email?.trim()
+
+                if (resendApiKey && resendSender) {
+                  setEmailSending(true)
+                  try {
+                    const response = await fetch('/api/send-email', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        apiKey: resendApiKey,
+                        from: resendSender,
+                        to: createdStaffEmail,
+                        subject: 'Batch Desk - Staff Login Credentials',
+                        html: `
+                          <div style="font-family: sans-serif; padding: 25px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b;">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                              <h2 style="color: #1e3a8a; margin: 0;">Batch Desk</h2>
+                              <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Coaching Institute Management System</p>
+                            </div>
+                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+                            <p>Hello <strong>${createdStaffName || 'Team Member'}</strong>,</p>
+                            <p>Your staff/teacher account has been successfully created. You can now access the management portal using the following credentials:</p>
+                            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; font-family: monospace; font-size: 14px; margin: 20px 0; line-height: 1.6;">
+                              <strong style="color: #475569;">Email:</strong> ${createdStaffEmail}<br/>
+                              <strong style="color: #475569;">Password:</strong> ${generatedPassword}
+                            </div>
+                            <div style="text-align: center; margin: 25px 0;">
+                              <a href="${window.location.origin}/login" style="background-color: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">Log In to Portal</a>
+                            </div>
+                            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">This is an automated security email containing temporary login details. Please update your password after logging in for security.</p>
+                          </div>
+                        `
+                      })
+                    })
+
+                    if (!response.ok) {
+                      const errData = await response.json()
+                      throw new Error(errData.error || 'Failed to dispatch email')
+                    }
+
+                    toast.success(`Credentials emailed successfully to ${createdStaffEmail}!`)
+                  } catch (err) {
+                    console.error('API Send Error:', err)
+                    toast.error(`SMTP Error: ${err.message}. Falling back to default mail app...`)
+                    // Fallback to mailto
+                    const subject = encodeURIComponent('Batch Desk - Staff Login Credentials')
+                    const body = encodeURIComponent(
+                      `Hello ${createdStaffName || 'Team Member'},\n\n` +
+                      `Your staff account has been created for Batch Desk.\n\n` +
+                      `Here are your login credentials:\n` +
+                      `- Email: ${createdStaffEmail}\n` +
+                      `- Password: ${generatedPassword}\n\n` +
+                      `Login URL: ${window.location.origin}/login\n\n` +
+                      `Best regards,\n` +
+                      `Batch Desk Administrator`
+                    )
+                    window.location.href = `mailto:${createdStaffEmail}?subject=${subject}&body=${body}`
+                  } finally {
+                    setEmailSending(false)
+                  }
+                } else {
+                  // Standard mailto fallback
+                  const subject = encodeURIComponent('Batch Desk - Staff Login Credentials')
+                  const body = encodeURIComponent(
+                    `Hello ${createdStaffName || 'Team Member'},\n\n` +
+                    `Your staff account has been created for Batch Desk.\n\n` +
+                    `Here are your login credentials:\n` +
+                    `- Email: ${createdStaffEmail}\n` +
+                    `- Password: ${generatedPassword}\n\n` +
+                    `Login URL: ${window.location.origin}/login\n\n` +
+                    `Best regards,\n` +
+                    `Batch Desk Administrator`
+                  )
+                  window.location.href = `mailto:${createdStaffEmail}?subject=${subject}&body=${body}`
+                }
               }}
             >
               Email Credentials to Staff Member
