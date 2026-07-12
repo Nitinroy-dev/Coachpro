@@ -401,7 +401,9 @@ export default function Settings() {
         email: inviteForm.email.trim(),
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: window.location.origin.includes('localhost')
+            ? 'https://coachpro-three.vercel.app/login'
+            : `${window.location.origin}/login`,
           data: {
             name: inviteForm.name.trim(),
             phone: inviteForm.phone.trim(),
