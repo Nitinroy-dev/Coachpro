@@ -510,6 +510,50 @@ export default function Settings() {
     }
   }
 
+  const handleResetStaffPassword = async (staffMember) => {
+    if (!window.confirm(`Are you sure you want to reset the password for ${staffMember.name || staffMember.email}? A new secure password will be generated and emailed to them, and their old password will be deactivated immediately.`)) {
+      return
+    }
+
+    const resendApiKey = integrationsForm.resend_api_key?.trim()
+    const resendSender = integrationsForm.resend_sender_email?.trim()
+
+    if (!resendApiKey || !resendSender) {
+      toast.error('Resend SMTP Settings are required to automatically email the new password. Please configure and save them first in the Integrations tab.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/reset-staff-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: staffMember.id,
+          email: staffMember.email,
+          name: staffMember.name,
+          resendApiKey,
+          resendSender
+        })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset password.')
+      }
+
+      toast.success(`Password reset successfully! The new credentials have been emailed to ${staffMember.email}.`)
+      fetchStaff()
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message || 'Failed to reset staff password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const trialDaysLeft = institute?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(institute.trial_ends_at) - Date.now()) / (1000 * 60 * 60 * 24)))
     : null
@@ -1001,15 +1045,27 @@ export default function Settings() {
                           </div>
                         </td>
                         <td className="p-3 text-right">
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            icon={Trash2}
-                            onClick={() => handleRemoveStaff(staff)}
-                            className="text-red-600 hover:text-red-700 bg-white"
-                          >
-                            Remove
-                          </Button>
+                          <div className="flex justify-end gap-1.5">
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              icon={Key}
+                              onClick={() => handleResetStaffPassword(staff)}
+                              className="text-orange-600 hover:text-orange-700 bg-white"
+                              title="Reset Password"
+                            >
+                              Reset Pass
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              icon={Trash2}
+                              onClick={() => handleRemoveStaff(staff)}
+                              className="text-red-600 hover:text-red-700 bg-white"
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))
