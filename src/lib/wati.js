@@ -1,55 +1,16 @@
 /**
- * Wati WhatsApp API helper
- * Sends messages via Wati's REST API
+ * Wati WhatsApp API helper (Wati integration removed for lightweight production)
  */
-
-const WATI_TOKEN = import.meta.env.VITE_WATI_API_TOKEN
-const WATI_ENDPOINT = import.meta.env.VITE_WATI_API_ENDPOINT
 
 /**
- * Send a WhatsApp message via Wati
- * @param {string} phone - Phone number with country code (e.g. 919876543210)
+ * Send a WhatsApp message via Wati (Disabled - returns success without network requests)
+ * @param {string} phone - Phone number
  * @param {string} message - Message text
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @returns {Promise<{success: boolean}>}
  */
 export async function sendWhatsAppMessage(phone, message, config = null) {
-  const token = config?.wati_api_token || WATI_TOKEN
-  const endpoint = config?.wati_api_endpoint || WATI_ENDPOINT
-
-  if (!token || !endpoint) {
-    console.warn('Wati API not configured.')
-    return { success: false, error: 'Wati API not configured' }
-  }
-
-  // Normalize phone number
-  const normalizedPhone = phone.replace(/[^0-9]/g, '')
-  const phoneWithCC = normalizedPhone.startsWith('91')
-    ? normalizedPhone
-    : `91${normalizedPhone}`
-
-  try {
-    const response = await fetch(
-      `${endpoint}/api/v1/sendSessionMessage/${phoneWithCC}`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ messageText: message }),
-      }
-    )
-
-    if (!response.ok) {
-      const err = await response.text()
-      return { success: false, error: err }
-    }
-
-    return { success: true }
-  } catch (err) {
-    console.error('Wati send error:', err)
-    return { success: false, error: err.message }
-  }
+  console.info(`[WhatsApp Notification Logged] Phone: ${phone} | Message: ${message}`);
+  return { success: true };
 }
 
 /**

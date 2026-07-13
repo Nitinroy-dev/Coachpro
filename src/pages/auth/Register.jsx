@@ -8,7 +8,6 @@ import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
-import { sendWhatsAppMessage } from '../../lib/wati'
 
 function generateUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -48,113 +47,6 @@ export default function Register() {
   const [success, setSuccess] = useState(false)
   const [verificationRequired, setVerificationRequired] = useState(false)
 
-  // Phone Verification States
-  const [phoneVerified, setPhoneVerified] = useState(false)
-  const [isSendingOtp, setIsSendingOtp] = useState(false)
-  const [showOtpInput, setShowOtpInput] = useState(false)
-  const [generatedOtp, setGeneratedOtp] = useState('')
-  const [enteredOtp, setEnteredOtp] = useState('')
-  const [otpError, setOtpError] = useState('')
-  const [resendCountdown, setResendCountdown] = useState(0)
-  const [isWatiConfigured, setIsWatiConfigured] = useState(true)
-  const timerRef = useRef(null)
-
-  useEffect(() => {
-    if (resendCountdown > 0) {
-      timerRef.current = setTimeout(() => {
-        setResendCountdown(prev => prev - 1)
-      }, 1000)
-    }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [resendCountdown])
-
-  const handlePhoneChange = (e) => {
-    const val = e.target.value
-    setForm({ ...form, phone: val })
-    setPhoneVerified(false)
-    setShowOtpInput(false)
-    setGeneratedOtp('')
-    setOtpError('')
-  }
-
-  const handleSendOtp = async () => {
-    const cleanPhone = form.phone.trim()
-    if (!/^\d{10}$/.test(cleanPhone)) {
-      setError('Please enter a valid 10-digit phone number.')
-      return
-    }
-
-    setError('')
-    setOtpError('')
-    setIsSendingOtp(true)
-
-    try {
-      // Check for duplicate phone number in public database tables before sending OTP
-      const { data: dupUserPhone } = await supabase
-        .from('users')
-        .select('id')
-        .eq('phone', cleanPhone)
-        .maybeSingle()
-
-      if (dupUserPhone) {
-        throw new Error('This phone number is already registered in the system.')
-      }
-
-      const { data: dupStuPhone } = await supabase
-        .from('students')
-        .select('id')
-        .eq('phone', cleanPhone)
-        .maybeSingle()
-
-      if (dupStuPhone) {
-        throw new Error('This phone number is already registered to a student.')
-      }
-
-      const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedOtp(otpCode)
-
-      const watiToken = import.meta.env.VITE_WATI_API_TOKEN
-      const watiEndpoint = import.meta.env.VITE_WATI_API_ENDPOINT
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      
-      let watiConfigured = true
-      if (!watiToken || !watiEndpoint || watiToken.includes('your_wati') || watiEndpoint.includes('XXXXX')) {
-        watiConfigured = false
-      }
-      setIsWatiConfigured(watiConfigured)
-
-      if (watiConfigured) {
-        const message = `Your CoachPro verification code is: ${otpCode}. Valid for 10 minutes.`
-        const result = await sendWhatsAppMessage(cleanPhone, message)
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to send WhatsApp verification message.')
-        }
-      } else {
-        console.warn('Wati API not configured. Mock OTP generated:', otpCode)
-      }
-
-      setShowOtpInput(true)
-      setResendCountdown(60)
-    } catch (err) {
-      setError(err.message || 'Failed to verify phone number. Please try again.')
-    } finally {
-      setIsSendingOtp(false)
-    }
-  }
-
-  const handleVerifyOtp = () => {
-    setOtpError('')
-    if (enteredOtp.trim() === generatedOtp || (!isWatiConfigured && enteredOtp.trim() === '123456')) {
-      setPhoneVerified(true)
-      setShowOtpInput(false)
-      setOtpError('')
-    } else {
-      setOtpError('Invalid verification code. Please try again.')
-    }
-  }
-
   // Auto-apply invite token variables if landing from an invite link
   useEffect(() => {
     if (inviteToken && inviteRole && inviteInstId) {
@@ -170,7 +62,6 @@ export default function Register() {
     }
     if (!form.name.trim()) return 'Your name is required.'
     if (!form.phone.trim()) return 'Phone number is required.'
-    if (!phoneVerified) return 'Please verify your phone number.'
     if (!/^\S+@\S+\.\S+$/.test(form.email)) return 'Enter a valid email.'
     if (form.password.length < 8) return 'Password must be at least 8 characters.'
     if (form.password !== form.confirmPassword) return 'Passwords do not match.'
@@ -496,71 +387,11 @@ export default function Register() {
                 type="tel"
                 placeholder="10-digit number"
                 value={form.phone}
-                onChange={handlePhoneChange}
+                onChange={set('phone')}
                 icon={Phone}
                 required
-                iconRight={
-                  phoneVerified ? (
-                    <span className="flex items-center text-green-600 font-semibold text-xs pr-1">
-                      Verified
-                    </span>
-                  ) : !showOtpInput ? (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={isSendingOtp || !/^\d{10}$/.test(form.phone.trim())}
-                      className="text-xs text-[#1E3A8A] font-bold hover:text-[#1e4db5] disabled:text-gray-300 disabled:cursor-not-allowed cursor-pointer transition-all pr-1"
-                    >
-                      {isSendingOtp ? '...' : 'Verify'}
-                    </button>
-                  ) : null
-                }
               />
             </div>
-
-            {showOtpInput && (
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-3 animate-fadeIn">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-blue-800">Phone Verification OTP</span>
-                  {resendCountdown > 0 ? (
-                    <span className="text-[10px] text-gray-500">Resend OTP in {resendCountdown}s</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      className="text-[10px] text-[#1E3A8A] hover:underline font-bold cursor-pointer"
-                    >
-                      Resend OTP
-                    </button>
-                  )}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter 6-digit OTP"
-                    value={enteredOtp}
-                    onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    containerClass="flex-1"
-                    maxLength={6}
-                    error={otpError}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={enteredOtp.length !== 6}
-                    className="self-end h-[42px]"
-                  >
-                    Verify
-                  </Button>
-                </div>
-                
-                {!isWatiConfigured && (
-                  <p className="text-[10px] text-orange-600 bg-orange-50 border border-orange-100 rounded-lg p-1.5 leading-snug">
-                    ℹ️ WhatsApp service is in demo mode. Use code <strong>123456</strong> to verify.
-                  </p>
-                )}
-              </div>
-            )}
 
             {role === 'student' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
