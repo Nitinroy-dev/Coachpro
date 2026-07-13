@@ -117,6 +117,7 @@ export default function Register() {
 
       const watiToken = import.meta.env.VITE_WATI_API_TOKEN
       const watiEndpoint = import.meta.env.VITE_WATI_API_ENDPOINT
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       
       let watiConfigured = true
       if (!watiToken || !watiEndpoint || watiToken.includes('your_wati') || watiEndpoint.includes('XXXXX')) {
@@ -131,6 +132,9 @@ export default function Register() {
           throw new Error(result.error || 'Failed to send WhatsApp verification message.')
         }
       } else {
+        if (!isLocalhost) {
+          throw new Error('WhatsApp/SMS verification credentials are not configured on this server. Registration is locked.')
+        }
         console.warn('Wati API not configured. Mock OTP generated:', otpCode)
       }
 
@@ -145,12 +149,17 @@ export default function Register() {
 
   const handleVerifyOtp = () => {
     setOtpError('')
-    if (enteredOtp.trim() === generatedOtp || (!isWatiConfigured && enteredOtp.trim() === '123456')) {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    if (enteredOtp.trim() === generatedOtp || (!isWatiConfigured && isLocalhost && enteredOtp.trim() === '123456')) {
       setPhoneVerified(true)
       setShowOtpInput(false)
       setOtpError('')
     } else {
-      setOtpError('Invalid verification code. Please try again.')
+      if (!isWatiConfigured && !isLocalhost) {
+        setOtpError('SMS/WhatsApp verification gateway is not configured on this server. Please contact administrator.')
+      } else {
+        setOtpError('Invalid verification code. Please try again.')
+      }
     }
   }
 

@@ -29,11 +29,11 @@ export async function sendWhatsAppMessage(phone, message, config = null) {
 
   try {
     const response = await fetch(
-      `${WATI_ENDPOINT}/api/v1/sendSessionMessage/${phoneWithCC}`,
+      `${endpoint}/api/v1/sendSessionMessage/${phoneWithCC}`,
       {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${WATI_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ messageText: message }),
