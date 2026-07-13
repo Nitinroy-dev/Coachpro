@@ -19,17 +19,19 @@ export default function VerifiedCredentials() {
       // Allow 500ms for Supabase client to parse URL hash tokens and settle the new session
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // First, check if we already have it in localStorage to prevent React StrictMode dual-mount wipes
-      const cachedEmail = localStorage.getItem('temp_view_email')
-      const cachedPass = localStorage.getItem('temp_view_pass')
-      const cachedName = localStorage.getItem('temp_view_name')
+      // First, check if we already have it in sessionStorage to prevent React StrictMode dual-mount wipes
+      const cachedEmail = sessionStorage.getItem('temp_view_email')
+      const cachedPass = sessionStorage.getItem('temp_view_pass')
+      const cachedName = sessionStorage.getItem('temp_view_name')
+      const cachedRole = sessionStorage.getItem('temp_view_role')
       
       if (cachedEmail && cachedPass) {
         if (active) {
           setCredentials({
-            name: cachedName || 'Team Member',
+            name: cachedName || 'User',
             email: cachedEmail,
-            password: cachedPass
+            password: cachedPass,
+            role: cachedRole || 'user'
           })
           setLoading(false)
         }
@@ -57,16 +59,18 @@ export default function VerifiedCredentials() {
 
         if (profile) {
           if (profile.temp_password) {
-            // Save in localStorage for persistence during this display cycle
-            localStorage.setItem('temp_view_email', profile.email)
-            localStorage.setItem('temp_view_pass', profile.temp_password)
-            localStorage.setItem('temp_view_name', profile.name || '')
+            // Save in sessionStorage for persistence during this display cycle
+            sessionStorage.setItem('temp_view_email', profile.email)
+            sessionStorage.setItem('temp_view_pass', profile.temp_password)
+            sessionStorage.setItem('temp_view_name', profile.name || '')
+            sessionStorage.setItem('temp_view_role', profile.role || '')
 
             if (active) {
               setCredentials({
                 name: profile.name,
                 email: profile.email,
-                password: profile.temp_password
+                password: profile.temp_password,
+                role: profile.role
               })
             }
 
@@ -146,10 +150,11 @@ export default function VerifiedCredentials() {
   }
 
   const handleProceed = async () => {
-    // Clear localStorage values
-    localStorage.removeItem('temp_view_email')
-    localStorage.removeItem('temp_view_pass')
-    localStorage.removeItem('temp_view_name')
+    // Clear sessionStorage values
+    sessionStorage.removeItem('temp_view_email')
+    sessionStorage.removeItem('temp_view_pass')
+    sessionStorage.removeItem('temp_view_name')
+    sessionStorage.removeItem('temp_view_role')
 
     // Clear user session so they have to type their credentials to log in
     await supabase.auth.signOut()
@@ -196,9 +201,14 @@ export default function VerifiedCredentials() {
               <CheckCircle2 size={32} />
             </div>
             <div className="space-y-1">
-              <h1 className="text-xl font-bold text-gray-900">Email Verified Successfully!</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                {credentials.role === 'parent' ? 'Parent Email Verified!' : credentials.role === 'student' ? 'Student Email Verified!' : 'Email Verified Successfully!'}
+              </h1>
               <p className="text-xs text-green-700 font-semibold bg-green-50 px-3 py-1.5 rounded-xl border border-green-100 inline-block">
-                Welcome to the team, ${credentials.name || 'Staff'}!
+                {credentials.role === 'parent' 
+                  ? `Welcome, Parent of ${credentials.name || 'Student'}!`
+                  : `Welcome, ${credentials.name || 'User'}!`
+                }
               </p>
             </div>
 

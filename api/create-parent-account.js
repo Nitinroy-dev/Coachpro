@@ -122,9 +122,14 @@ export default async function handler(req, res) {
                 <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
                 <p>Hello <strong>${parentName || 'Parent'}</strong>,</p>
                 <p>An account has been created for you as the parent of <strong>${studentName}</strong>.</p>
-                <p>To verify your email address and reveal your login credentials, please click the confirmation link below:</p>
+                <p>Here are your unique parent login details (please keep them safe):</p>
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; font-family: monospace; font-size: 14px; margin: 20px 0; line-height: 1.6;">
+                  <strong style="color: #475569;">Email:</strong> ${parentEmail}<br/>
+                  <strong style="color: #475569;">Temporary Password:</strong> ${password}
+                </div>
+                <p>To verify your email address and activate your account, please click the confirmation link below:</p>
                 <div style="text-align: center; margin: 25px 0;">
-                  <a href="${actionLink}" style="background-color: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">Confirm Email & Get Credentials</a>
+                  <a href="${actionLink}" style="background-color: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">Confirm Email & Activate Account</a>
                 </div>
                 <p style="font-size: 11px; color: #94a3b8;">If the button above does not work, copy and paste this link into your browser:</p>
                 <p style="font-size: 11px; font-family: monospace; word-break: break-all; color: #64748b;">${actionLink}</p>
