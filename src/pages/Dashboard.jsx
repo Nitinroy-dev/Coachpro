@@ -219,8 +219,9 @@ export default function Dashboard() {
       const monthRevTotal = thisMonthFeesList.reduce((sum, f) => sum + (Number(f.paid_amount) || 0), 0)
       const pendingFeesTotal = pendingFeesList.reduce((sum, f) => sum + ((Number(f.amount) || 0) - (Number(f.paid_amount) || 0)), 0)
       
-      const presentToday = todayAttendanceList.filter(a => a.status === 'present' || a.status === 'late').length
-      const attPctToday = todayAttendanceList.length > 0 ? Math.round((presentToday / todayAttendanceList.length) * 100) : 0
+      const activeToday = todayAttendanceList.filter(a => a.status !== 'holiday')
+      const presentToday = activeToday.filter(a => a.status === 'present' || a.status === 'late').length
+      const attPctToday = activeToday.length > 0 ? Math.round((presentToday / activeToday.length) * 100) : 100
 
       setDashStats({
         activeStudents: activeStudentsList.length,
@@ -285,13 +286,14 @@ export default function Dashboard() {
       // 3c. 30-day attendance line chart
       const attTrendMap = {}
       attendanceHistoryList.forEach(a => {
+        if (a.status === 'holiday') return // Skip holiday logs in rate tracking
         if (!attTrendMap[a.date]) attTrendMap[a.date] = { date: a.date, present: 0, total: 0 }
         attTrendMap[a.date].total += 1
         if (a.status === 'present' || a.status === 'late') attTrendMap[a.date].present += 1
       })
       const lineData = Object.values(attTrendMap).map(item => ({
         date: new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
-        pct: item.total > 0 ? Math.round((item.present / item.total) * 100) : 0
+        pct: item.total > 0 ? Math.round((item.present / item.total) * 100) : 100
       }))
       setAttendanceTrendChart(lineData.slice(-14)) // last 14 active days for clean rendering
 

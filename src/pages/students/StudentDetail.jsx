@@ -273,11 +273,11 @@ export default function StudentDetail() {
   const paidPct = activeTotalFee > 0 ? Math.min(100, Math.round((totalPaid / activeTotalFee) * 100)) : 0
 
   // Attendance Calculations
-  const totalAttDays = attendance.length
   const presentDays = attendance.filter(a => a.status === 'present').length
   const absentDays = attendance.filter(a => a.status === 'absent').length
   const lateDays = attendance.filter(a => a.status === 'late').length
-  const attPct = totalAttDays > 0 ? Math.round(((presentDays + lateDays) / totalAttDays) * 100) : 0
+  const totalAttDays = presentDays + absentDays + lateDays
+  const attPct = totalAttDays > 0 ? Math.round(((presentDays + lateDays) / totalAttDays) * 100) : 100
 
   return (
     <div className="space-y-6">
