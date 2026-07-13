@@ -1,15 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   GraduationCap, Mail, Lock, Eye, EyeOff,
-  User, Phone, Building2, CheckCircle2, Users, Check
+  User, Phone, Building2, CheckCircle2, Users
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
-import { auth as firebaseAuth } from '../../lib/firebase'
-import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'
 
 function generateUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -49,120 +47,6 @@ export default function Register() {
   const [success, setSuccess] = useState(false)
   const [verificationRequired, setVerificationRequired] = useState(false)
 
-  // Phone Verification States
-  const [phoneVerified, setPhoneVerified] = useState(false)
-  const [isSendingOtp, setIsSendingOtp] = useState(false)
-  const [showOtpInput, setShowOtpInput] = useState(false)
-  const [generatedOtp, setGeneratedOtp] = useState('')
-  const [enteredOtp, setEnteredOtp] = useState('')
-  const [otpError, setOtpError] = useState('')
-  const [resendCountdown, setResendCountdown] = useState(0)
-  const timerRef = useRef(null)
-
-  useEffect(() => {
-    if (resendCountdown > 0) {
-      timerRef.current = setTimeout(() => {
-        setResendCountdown(prev => prev - 1)
-      }, 1000)
-    }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [resendCountdown])
-
-  const handlePhoneChange = (e) => {
-    const val = e.target.value
-    setForm({ ...form, phone: val })
-    setPhoneVerified(false)
-    setShowOtpInput(false)
-    setGeneratedOtp('')
-    setOtpError('')
-  }
-
-  const handleSendOtp = async () => {
-    const cleanPhone = form.phone.trim()
-    if (!/^\d{10}$/.test(cleanPhone)) {
-      setError('Please enter a valid 10-digit phone number.')
-      return
-    }
-
-    setError('')
-    setOtpError('')
-    setIsSendingOtp(true)
-
-    try {
-      // Validate duplicate phone in public database
-      const [dupUser, dupStu] = await Promise.all([
-        supabase.from('users').select('id').eq('phone', cleanPhone).maybeSingle(),
-        supabase.from('students').select('id').eq('phone', cleanPhone).maybeSingle()
-      ])
-
-      if (dupUser.data || dupStu.data) {
-        throw new Error('This phone number is already registered in the system.')
-      }
-
-      if (firebaseAuth) {
-        // Real Firebase SMS verification!
-        if (!window.recaptchaVerifier) {
-          window.recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', {
-            size: 'invisible'
-          })
-        }
-
-        const phoneWithCountryCode = `+91${cleanPhone}`
-        const confirmationResult = await signInWithPhoneNumber(
-          firebaseAuth,
-          phoneWithCountryCode,
-          window.recaptchaVerifier
-        )
-        window.confirmationResult = confirmationResult
-      } else {
-        // Fallback mock OTP for local/staging verification without Firebase configs
-        const mockCode = Math.floor(100000 + Math.random() * 900000).toString()
-        setGeneratedOtp(mockCode)
-        console.warn('[Demo Mode] Firebase Auth is not configured. Mock code generated:', mockCode)
-      }
-
-      setShowOtpInput(true)
-      setResendCountdown(60)
-    } catch (err) {
-      console.error('Send OTP Error:', err)
-      setError(err.message || 'Failed to send OTP verification message.')
-      if (window.recaptchaVerifier) {
-        try {
-          window.recaptchaVerifier.clear()
-          window.recaptchaVerifier = null
-        } catch (e) {}
-      }
-    } finally {
-      setIsSendingOtp(false)
-    }
-  }
-
-  const handleVerifyOtp = async () => {
-    setOtpError('')
-    try {
-      if (firebaseAuth && window.confirmationResult) {
-        await window.confirmationResult.confirm(enteredOtp)
-        await firebaseAuth.signOut() // Sign out from Firebase immediately
-        setPhoneVerified(true)
-        setShowOtpInput(false)
-        setOtpError('')
-      } else {
-        if (enteredOtp.trim() === generatedOtp || enteredOtp.trim() === '123456') {
-          setPhoneVerified(true)
-          setShowOtpInput(false)
-          setOtpError('')
-        } else {
-          setOtpError('Invalid verification code. Please try again.')
-        }
-      }
-    } catch (err) {
-      console.error('Verify OTP Error:', err)
-      setOtpError('Invalid or expired verification code. Please try again.')
-    }
-  }
-
   // Auto-apply invite token variables if landing from an invite link
   useEffect(() => {
     if (inviteToken && inviteRole && inviteInstId) {
@@ -178,7 +62,6 @@ export default function Register() {
     }
     if (!form.name.trim()) return 'Your name is required.'
     if (!form.phone.trim()) return 'Phone number is required.'
-    if (!phoneVerified) return 'Please verify your phone number.'
     if (!/^\S+@\S+\.\S+$/.test(form.email)) return 'Enter a valid email.'
     if (form.password.length < 8) return 'Password must be at least 8 characters.'
     if (form.password !== form.confirmPassword) return 'Passwords do not match.'
@@ -504,74 +387,11 @@ export default function Register() {
                 type="tel"
                 placeholder="10-digit number"
                 value={form.phone}
-                onChange={handlePhoneChange}
+                onChange={set('phone')}
                 icon={Phone}
                 required
-                iconRight={
-                  phoneVerified ? (
-                    <span className="flex items-center text-green-600 font-semibold text-xs pr-1">
-                      Verified
-                    </span>
-                  ) : !showOtpInput ? (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={isSendingOtp || !/^\d{10}$/.test(form.phone.trim())}
-                      className="text-xs text-[#1E3A8A] font-bold hover:text-[#1e4db5] disabled:text-gray-300 disabled:cursor-not-allowed cursor-pointer transition-all pr-1"
-                    >
-                      {isSendingOtp ? '...' : 'Verify'}
-                    </button>
-                  ) : null
-                }
               />
             </div>
-
-            {/* Invisible Firebase reCAPTCHA container anchor */}
-            <div id="recaptcha-container"></div>
-
-            {showOtpInput && (
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-3 animate-fadeIn">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-blue-800">Phone Verification OTP</span>
-                  {resendCountdown > 0 ? (
-                    <span className="text-[10px] text-gray-500">Resend OTP in {resendCountdown}s</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      className="text-[10px] text-[#1E3A8A] hover:underline font-bold cursor-pointer"
-                    >
-                      Resend OTP
-                    </button>
-                  )}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter 6-digit OTP"
-                    value={enteredOtp}
-                    onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    containerClass="flex-1"
-                    maxLength={6}
-                    error={otpError}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={enteredOtp.length !== 6}
-                    className="self-end h-[42px]"
-                  >
-                    Verify
-                  </Button>
-                </div>
-                
-                {!firebaseAuth && (
-                  <p className="text-[10px] text-orange-600 bg-orange-50 border border-orange-100 rounded-lg p-1.5 leading-snug">
-                    ℹ️ Firebase Auth is not configured. [Demo Mode]: Use code <strong>123456</strong> or look at the browser console to verify.
-                  </p>
-                )}
-              </div>
-            )}
 
             {role === 'student' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
