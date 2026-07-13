@@ -150,11 +150,16 @@ export function AuthProvider({ children }) {
   async function signUp(email, password, metadata = {}) {
     // Mark as registering so onAuthStateChange doesn't try to fetch non-existent profile
     registering.current = true
+    const redirectToUrl = window.location.origin.includes('localhost')
+      ? 'https://coachpro-three.vercel.app/verified'
+      : `${window.location.origin}/verified`
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: metadata
+        data: metadata,
+        emailRedirectTo: redirectToUrl
       }
     })
     if (error) {
