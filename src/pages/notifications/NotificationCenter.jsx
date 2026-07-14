@@ -426,7 +426,7 @@ export default function NotificationCenter() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Form: Send Message */}
         <Card className="lg:col-span-2 p-5 h-fit relative">
-          {(!institute?.plan || institute?.plan === 'starter') && (
+          {(!institute?.plan || institute?.plan === 'starter') && institute?.subscription_status !== 'trial' && (
             <div className="absolute inset-0 bg-white/75 backdrop-blur-xs z-10 rounded-3xl flex items-center justify-center p-6 text-center">
               <div className="space-y-3 max-w-sm">
                 <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
@@ -576,7 +576,7 @@ export default function NotificationCenter() {
 
         {/* Right Info: Alert Automation Info */}
         <Card className="p-5 h-fit bg-gradient-to-br from-indigo-900 to-[#1E3A8A] text-white border-0 shadow-xl relative overflow-hidden">
-          {(!institute?.plan || institute?.plan === 'starter') && (
+          {(!institute?.plan || institute?.plan === 'starter') && institute?.subscription_status !== 'trial' && (
             <div className="absolute inset-0 bg-indigo-950/90 backdrop-blur-xs z-10 p-6 flex flex-col justify-center text-center space-y-3">
               <div className="w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center mx-auto shadow-inner">
                 <AlertCircle size={24} />

@@ -128,23 +128,59 @@ export default function Register() {
       if (role === 'admin') {
         let targetInstId = inviteInstId
 
+        // Check if this email or phone has ever availed a free trial in the lifetime logs
+        let isTrialLocked = false
+        try {
+          const { data: hasPriorTrial, error: trialCheckErr } = await supabase
+            .from('trial_history')
+            .select('id')
+            .or(`email.eq.${form.email.trim().toLowerCase()},phone.eq.${form.phone.trim()}`)
+            .maybeSingle()
+
+          if (hasPriorTrial) {
+            isTrialLocked = true
+          }
+        } catch (err) {
+          console.warn('Trial history check skipped/error:', err.message)
+        }
+
         // If not joining via invite link, create a new institute
         if (!targetInstId) {
           targetInstId = generateUUID()
+
+          // If they already had a trial, they register in expired status (must subscribe to activate)
+          const subStatus = isTrialLocked ? 'expired' : 'trial'
+          const trialEnds = isTrialLocked 
+            ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // yesterday
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days trial
+
           const { error: instError } = await supabase
             .from('institutes')
             .insert({
               id: targetInstId,
               name: form.instituteName.trim(),
-              // Omitted phone from institutes table insert to prevent schema cache missing column error
-              subscription_status: 'trial',
-              trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              subscription_status: subStatus,
+              trial_ends_at: trialEnds,
               plan: 'starter',
             })
 
           if (instError) {
             console.error('Institute creation error:', instError)
             throw new Error('Failed to create institute: ' + instError.message)
+          }
+
+          // If they successfully registered their first trial, save it to history logs
+          if (!isTrialLocked) {
+            try {
+              await supabase
+                .from('trial_history')
+                .insert({
+                  email: form.email.trim().toLowerCase(),
+                  phone: form.phone.trim()
+                })
+            } catch (historyErr) {
+              console.error('Failed to log trial history:', historyErr.message)
+            }
           }
         }
 

@@ -33,7 +33,7 @@ export default function Settings() {
   const { profile, institute, refreshProfile } = useAuth()
   const toast = useToast()
   const instituteId = profile?.institute_id
-  const isStarter = !institute?.plan || institute?.plan === 'starter'
+  const isStarter = (!institute?.plan || institute?.plan === 'starter') && institute?.subscription_status !== 'trial'
 
   // Tab State
   const [searchParams] = useSearchParams()
@@ -621,7 +621,7 @@ export default function Settings() {
             <form onSubmit={handleSaveProfile} className="space-y-4 pt-4">
               {/* Logo Select */}
               <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200/60 relative">
-                {(institute?.plan === 'starter' || institute?.plan === 'growth' || !institute?.plan) && (
+                {(institute?.plan === 'starter' || institute?.plan === 'growth' || !institute?.plan) && institute?.subscription_status !== 'trial' && (
                   <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-10 rounded-2xl flex items-center justify-center text-xs font-bold text-gray-500">
                     <span className="bg-rose-50 text-rose-700 border border-rose-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-xs">
                       🔒 Upgrade to PRO to unlock custom logo branding

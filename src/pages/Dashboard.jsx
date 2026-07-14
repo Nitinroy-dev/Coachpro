@@ -338,7 +338,7 @@ export default function Dashboard() {
   // Student or Parent view rendering logic
   if (profile?.role === 'student' || profile?.role === 'parent') {
     const activePlan = institute?.plan || 'starter'
-    if (activePlan === 'starter' || activePlan === 'growth') {
+    if ((activePlan === 'starter' || activePlan === 'growth') && institute?.subscription_status !== 'trial') {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <Card className="p-8 max-w-md w-full text-center space-y-4 shadow-xl border border-gray-200 rounded-3xl bg-white">
