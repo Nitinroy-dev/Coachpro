@@ -168,6 +168,8 @@ CREATE TABLE IF NOT EXISTS class_events (
     'cancelled','extra','rescheduled','holiday','exam','announcement'
   )),
   event_date DATE NOT NULL,
+  start_time TIME,
+  end_time TIME,
   original_time TEXT,
   new_time TEXT,
   new_date DATE,
