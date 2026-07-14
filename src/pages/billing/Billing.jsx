@@ -403,33 +403,171 @@ export default function Billing() {
         </div>
       </Card>
 
-      {/* SECTION 2: UPGRADE PAYMENT — UPI QR ONLY */}
+      {/* SECTION 2: CHOOSE SUBSCRIPTION PLAN */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Choose Subscription Plan</h2>
+            <p className="text-xs text-gray-500">Select a tier below. Pricing scales with student size and feature sets.</p>
+          </div>
+          {/* Billing cycle switch inside choose plan */}
+          <div className="flex items-center gap-3 bg-gray-100 p-1.5 rounded-xl text-xs font-bold w-fit border border-gray-200/50">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${billingCycle === 'monthly' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${billingCycle === 'annual' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Annual <span className="bg-green-100 text-green-700 font-extrabold text-[9px] px-1.5 py-0.5 rounded-full uppercase">25% OFF</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Starter */}
+          <div
+            onClick={() => setSelectedPlan('starter')}
+            className={`cursor-pointer p-5 rounded-3xl border-2 transition-all space-y-3 flex flex-col justify-between hover:shadow-md ${
+              selectedPlan === 'starter'
+                ? 'border-[#1E3A8A] bg-blue-50/20 ring-2 ring-blue-500/10 shadow-xs'
+                : 'border-gray-200 bg-white'
+            }`}
+          >
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-start">
+                <span className="font-extrabold text-gray-900 text-sm tracking-wide">STARTER</span>
+                {selectedPlan === 'starter' && <span className="bg-[#1E3A8A] text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Selected</span>}
+              </div>
+              <p className="text-gray-500 text-[11px]">Best for small tuitions</p>
+              <div className="pt-1">
+                <span className="text-2xl font-extrabold text-gray-900">₹{billingCycle === 'annual' ? '599' : '799'}</span>
+                <span className="text-gray-500">/mo</span>
+                {billingCycle === 'annual' && <p className="text-[9px] text-green-600 font-bold">billed ₹7,190/yr</p>}
+              </div>
+              <ul className="space-y-1.5 pt-2 border-t border-gray-100 text-gray-600 font-medium">
+                <li>👥 Up to 150 Students</li>
+                <li>📚 Up to 8 Batches</li>
+                <li>👨‍🏫 2 Staff Accounts</li>
+                <li>📧 Email support</li>
+                <li className="text-[10px] text-gray-400 line-through">💬 WhatsApp automated alerts</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Card 2: Growth */}
+          <div
+            onClick={() => setSelectedPlan('growth')}
+            className={`cursor-pointer p-5 rounded-3xl border-2 transition-all space-y-3 flex flex-col justify-between hover:shadow-md ${
+              selectedPlan === 'growth'
+                ? 'border-[#1E3A8A] bg-blue-50/20 ring-2 ring-blue-500/10 shadow-xs'
+                : 'border-gray-200 bg-white'
+            }`}
+          >
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-start">
+                <span className="font-extrabold text-gray-900 text-sm tracking-wide flex items-center gap-1">GROWTH 🚀</span>
+                {selectedPlan === 'growth' && <span className="bg-[#1E3A8A] text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Selected</span>}
+              </div>
+              <p className="text-gray-500 text-[11px]">Best for coaching centers</p>
+              <div className="pt-1">
+                <span className="text-2xl font-extrabold text-gray-900">₹{billingCycle === 'annual' ? '1,124' : '1,499'}</span>
+                <span className="text-gray-500">/mo</span>
+                {billingCycle === 'annual' && <p className="text-[9px] text-green-600 font-bold">billed ₹13,490/yr</p>}
+              </div>
+              <ul className="space-y-1.5 pt-2 border-t border-gray-100 text-gray-700 font-extrabold">
+                <li>👥 Up to 400 Students</li>
+                <li>📚 Up to 20 Batches</li>
+                <li>👨‍🏫 6 Staff Accounts</li>
+                <li className="text-[#F97316]">📢 WhatsApp Auto Alerts</li>
+                <li>💳 UPI QR payments</li>
+                <li>📅 Institute Calendar</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Card 3: Pro */}
+          <div
+            onClick={() => setSelectedPlan('pro')}
+            className={`cursor-pointer p-5 rounded-3xl border-2 transition-all space-y-3 flex flex-col justify-between hover:shadow-md ${
+              selectedPlan === 'pro'
+                ? 'border-[#1E3A8A] bg-blue-50/20 ring-2 ring-blue-500/10 shadow-xs'
+                : 'border-gray-200 bg-white'
+            }`}
+          >
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-start">
+                <span className="font-extrabold text-gray-900 text-sm tracking-wide flex items-center gap-1">PRO ⭐</span>
+                {selectedPlan === 'pro' && <span className="bg-[#1E3A8A] text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Selected</span>}
+              </div>
+              <p className="text-gray-500 text-[11px]">For established institutes</p>
+              <div className="pt-1">
+                <span className="text-2xl font-extrabold text-gray-900">₹{billingCycle === 'annual' ? '1,874' : '2,499'}</span>
+                <span className="text-gray-500">/mo</span>
+                {billingCycle === 'annual' && <p className="text-[9px] text-green-600 font-bold">billed ₹22,490/yr</p>}
+              </div>
+              <ul className="space-y-1.5 pt-2 border-t border-gray-100 text-gray-700 font-extrabold">
+                <li>👥 Up to 1,000 Students</li>
+                <li>📚 Unlimited Batches</li>
+                <li>👨‍🏫 15 Staff Accounts</li>
+                <li className="text-[#1E3A8A]">🎨 Custom branding & Logo</li>
+                <li className="text-[#1E3A8A]">👤 Student/Parent portals</li>
+                <li>📞 Priority support</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Card 4: Enterprise */}
+          <div
+            onClick={() => setSelectedPlan('enterprise')}
+            className={`cursor-pointer p-5 rounded-3xl border-2 transition-all space-y-3 flex flex-col justify-between hover:shadow-md ${
+              selectedPlan === 'enterprise'
+                ? 'border-[#1E3A8A] bg-blue-50/20 ring-2 ring-blue-500/10 shadow-xs'
+                : 'border-gray-200 bg-white'
+            }`}
+          >
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-start">
+                <span className="font-extrabold text-gray-900 text-sm tracking-wide">ENTERPRISE</span>
+                {selectedPlan === 'enterprise' && <span className="bg-[#1E3A8A] text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Selected</span>}
+              </div>
+              <p className="text-gray-500 text-[11px]">For chains & franchises</p>
+              <div className="pt-1">
+                <span className="text-2xl font-extrabold text-gray-900">₹{billingCycle === 'annual' ? '2,999' : '3,999'}</span>
+                <span className="text-gray-500">/mo</span>
+                {billingCycle === 'annual' && <p className="text-[9px] text-green-600 font-bold">billed ₹35,990/yr</p>}
+              </div>
+              <ul className="space-y-1.5 pt-2 border-t border-gray-100 text-gray-650 font-bold">
+                <li>👥 Unlimited Students</li>
+                <li>🏢 Unlimited Branches</li>
+                <li>💼 Dedicated Account Manager</li>
+                <li>🔌 API integrations</li>
+                <li>📊 SLA & Uptime guarantee</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 3: CHECKOUT & PAYMENT */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-gray-900">Upgrade via UPI Payment</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="p-6 md:col-span-2 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Select
-                label="Selected Plan Tier *"
-                value={selectedPlan}
-                onChange={(e) => setSelectedPlan(e.target.value)}
-                options={[
-                  { value: 'starter', label: 'Starter Plan (₹799/mo)' },
-                  { value: 'growth', label: 'Growth Plan (₹1,499/mo)' },
-                  { value: 'pro', label: 'Pro Plan (₹2,499/mo)' },
-                  { value: 'enterprise', label: 'Enterprise Plan (₹3,999/mo)' },
-                ]}
-              />
-              <Select
-                label="Billing Cycle *"
-                value={billingCycle}
-                onChange={(e) => setBillingCycle(e.target.value)}
-                options={[
-                  { value: 'monthly', label: 'Monthly Billing' },
-                  { value: 'annual', label: 'Annual Billing (25% OFF)' },
-                ]}
-              />
+            {/* Selected Plan Summary Row */}
+            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Selected Subscription</p>
+                <p className="text-base font-extrabold text-gray-900 capitalize">{selectedPlan} Plan ({billingCycle})</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Standard Price</p>
+                <p className="text-lg font-extrabold text-[#1E3A8A]">₹{basePrice.toLocaleString('en-IN')}</p>
+              </div>
             </div>
 
             {/* Coupon code */}
