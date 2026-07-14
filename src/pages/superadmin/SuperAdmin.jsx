@@ -30,6 +30,12 @@ export default function SuperAdmin() {
   const [selectedInst, setSelectedInst] = useState(null)
   const [selectedPaymentVerify, setSelectedPaymentVerify] = useState(null)
   const [showCouponModal, setShowCouponModal] = useState(false)
+  const [selectedInstForSubscription, setSelectedInstForSubscription] = useState(null)
+  const [subForm, setSubForm] = useState({
+    plan: 'growth',
+    status: 'active',
+    expires_at: ''
+  })
 
   // Coupon form
   const [couponForm, setCouponForm] = useState({
@@ -98,6 +104,56 @@ export default function SuperAdmin() {
       fetchSuperadminData()
     } catch (err) {
       alert(`Failed to save discount: ${err.message}`)
+    }
+  }
+
+  const handleOpenSubscriptionModal = (inst) => {
+    setSelectedInstForSubscription(inst)
+    const currentExpiry = inst.subscription_ends_at || inst.trial_ends_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    setSubForm({
+      plan: inst.plan || 'starter',
+      status: inst.subscription_status || 'trial',
+      expires_at: currentExpiry.split('T')[0]
+    })
+  }
+
+  const setExpiryDays = (days) => {
+    const d = new Date()
+    d.setDate(d.getDate() + days)
+    setSubForm(prev => ({ ...prev, expires_at: d.toISOString().split('T')[0] }))
+  }
+
+  const handleSaveSubscription = async () => {
+    if (!selectedInstForSubscription) return
+    setLoading(true)
+    try {
+      const payload = {
+        plan: subForm.plan,
+        subscription_status: subForm.status,
+      }
+
+      if (subForm.status === 'trial') {
+        payload.trial_ends_at = new Date(subForm.expires_at + 'T23:59:59.000Z').toISOString()
+        payload.subscription_ends_at = null
+      } else {
+        payload.subscription_ends_at = new Date(subForm.expires_at + 'T23:59:59.000Z').toISOString()
+        payload.trial_ends_at = null
+      }
+
+      const { error } = await supabase
+        .from('institutes')
+        .update(payload)
+        .eq('id', selectedInstForSubscription.id)
+
+      if (error) throw error
+
+      alert(`Successfully updated subscription for ${selectedInstForSubscription.name}!`)
+      setSelectedInstForSubscription(null)
+      fetchSuperadminData()
+    } catch (err) {
+      alert(`Failed to save subscription: ${err.message}`)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -313,6 +369,13 @@ export default function SuperAdmin() {
                     <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap">
                       <Button
                         size="xs"
+                        variant="primary"
+                        onClick={() => handleOpenSubscriptionModal(i)}
+                      >
+                        🔧 Subscription
+                      </Button>
+                      <Button
+                        size="xs"
                         variant="outline"
                         onClick={() => handleOfferDiscount(i)}
                         className="bg-white"
@@ -493,6 +556,66 @@ export default function SuperAdmin() {
                 <img src={selectedPaymentVerify.screenshot_url} alt="Screenshot" className="max-h-60 mx-auto rounded-xl border" />
               </div>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Manage Subscription Modal */}
+      {selectedInstForSubscription && (
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedInstForSubscription(null)}
+          title={`Activate / Manage Subscription: ${selectedInstForSubscription.name}`}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setSelectedInstForSubscription(null)}>Cancel</Button>
+              <Button onClick={handleSaveSubscription} icon={Check}>Save Changes</Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <Select
+              label="Selected Plan Tier *"
+              value={subForm.plan}
+              onChange={(e) => setSubForm({ ...subForm, plan: e.target.value })}
+              options={[
+                { value: 'starter', label: 'Starter Plan (150 students)' },
+                { value: 'growth', label: 'Growth Plan (400 students)' },
+                { value: 'pro', label: 'Pro Plan (1000 students)' },
+                { value: 'enterprise', label: 'Enterprise Plan (unlimited)' },
+              ]}
+            />
+            <Select
+              label="Subscription Status *"
+              value={subForm.status}
+              onChange={(e) => setSubForm({ ...subForm, status: e.target.value })}
+              options={[
+                { value: 'trial', label: 'Free Trial' },
+                { value: 'active', label: 'Active Plan' },
+                { value: 'expired', label: 'Expired' },
+                { value: 'suspended', label: 'Suspended / Banned' },
+              ]}
+            />
+            <div className="space-y-1.5">
+              <Input
+                label="Expiration Date *"
+                type="date"
+                value={subForm.expires_at}
+                onChange={(e) => setSubForm({ ...subForm, expires_at: e.target.value })}
+                required
+              />
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setExpiryDays(30)} className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold px-2.5 py-1 rounded-lg border">
+                  +1 Month (30d)
+                </button>
+                <button type="button" onClick={() => setExpiryDays(365)} className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold px-2.5 py-1 rounded-lg border">
+                  +1 Year (365d)
+                </button>
+                <button type="button" onClick={() => setExpiryDays(3650)} className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold px-2.5 py-1 rounded-lg border">
+                  +10 Years (Lifetime)
+                </button>
+              </div>
+            </div>
           </div>
         </Modal>
       )}
