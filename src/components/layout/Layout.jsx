@@ -232,11 +232,11 @@ export default function Layout() {
               <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-[#1E3A8A] flex items-center justify-center text-white font-bold text-sm">
-                    C
+                    {isSuperAdmin ? 'S' : 'C'}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base">Menu Options</h3>
-                    <p className="text-xs text-gray-400">{institute?.name}</p>
+                    <h3 className="font-bold text-gray-900 text-base">{isSuperAdmin ? 'Operations Hub' : 'Menu Options'}</h3>
+                    <p className="text-xs text-gray-400">{isSuperAdmin ? 'Superadmin Operations' : institute?.name}</p>
                   </div>
                 </div>
                 <button
