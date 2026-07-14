@@ -111,7 +111,7 @@ export default function ClassEvents() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredEvents.map(e => (
-            <Card key={e.id} className="p-5 space-y-3 border border-gray-200 hover:border-gray-300 transition-all bg-white flex flex-col justify-between">
+            <Card key={e.id} className="p-5 space-y-3 border border-gray-200 hover:border-gray-300 transition-all bg-white flex flex-col justify-between shadow-2xs">
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className={`px-3 py-1 rounded-xl text-[10px] font-extrabold uppercase shadow-2xs ${typeBadgeColors[e.event_type] || 'bg-gray-800 text-white'}`}>
@@ -125,8 +125,51 @@ export default function ClassEvents() {
                 <h3 className="font-extrabold text-gray-900 text-base leading-snug">{e.subject}</h3>
                 <p className="text-xs text-gray-600">Target: <strong className="text-[#1E3A8A]">{e.batches?.name || 'All Batches'}</strong></p>
 
-                {e.notes && (
-                  <p className="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-xl border border-gray-100 font-medium">
+                {/* Cancelled Info */}
+                {e.event_type === 'cancelled' && (
+                  <p className="text-xs text-red-700 font-semibold bg-red-50 border border-red-100 rounded-lg p-2.5 leading-normal">
+                    🔴 Class Cancelled: {e.notes || 'No reason specified'}
+                  </p>
+                )}
+
+                {/* Extra Class Timings & Topics */}
+                {e.event_type === 'extra' && (
+                  <div className="text-xs bg-green-50 border border-green-100 text-green-800 rounded-lg p-2.5 space-y-1 font-medium leading-normal">
+                    <p>⏰ Time: <strong>{e.start_time ? e.start_time.slice(0, 5) : '—'} - {e.end_time ? e.end_time.slice(0, 5) : '—'}</strong></p>
+                    {e.notes && <p>Topic: <strong>{e.notes}</strong></p>}
+                  </div>
+                )}
+
+                {/* Exam syllabus & details */}
+                {e.event_type === 'exam' && (
+                  <div className="text-xs bg-blue-50 border border-blue-100 text-blue-800 rounded-lg p-2.5 space-y-1.5 font-medium leading-normal">
+                    <p>⏰ Time: <strong>{e.start_time ? e.start_time.slice(0, 5) : '—'} - {e.end_time ? e.end_time.slice(0, 5) : '—'}</strong></p>
+                    {e.total_marks && <p>🏆 Total Marks: <strong>{e.total_marks} Marks</strong></p>}
+                    {e.syllabus && <p className="text-gray-750">📖 Syllabus: {e.syllabus}</p>}
+                    {e.notes && <p className="text-gray-750 opacity-90">Note: {e.notes}</p>}
+                  </div>
+                )}
+
+                {/* Rescheduled info */}
+                {e.event_type === 'rescheduled' && (
+                  <div className="text-xs bg-yellow-50 border border-yellow-100 text-yellow-850 rounded-lg p-2.5 space-y-1 font-medium leading-normal">
+                    {e.new_date && <p>📅 Rescheduled Date: <strong>{new Date(e.new_date).toLocaleDateString('en-IN')}</strong></p>}
+                    {e.new_time && <p>⏰ New Timing: <strong>{e.new_time}</strong></p>}
+                    {e.notes && <p className="text-gray-750">Reason: {e.notes}</p>}
+                  </div>
+                )}
+
+                {/* Holiday info */}
+                {e.event_type === 'holiday' && (
+                  <div className="text-xs bg-purple-50 border border-purple-100 text-purple-800 rounded-lg p-2.5 space-y-1 font-medium leading-normal">
+                    <p>🎉 Holiday: <strong>{e.subject}</strong></p>
+                    {e.notes && <p className="text-gray-750">{e.notes}</p>}
+                  </div>
+                )}
+
+                {/* Announcement notice */}
+                {e.event_type === 'announcement' && e.notes && (
+                  <p className="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-xl border border-gray-100 font-medium leading-normal">
                     {e.notes}
                   </p>
                 )}

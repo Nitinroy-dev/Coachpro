@@ -473,8 +473,8 @@ export default function Dashboard() {
                   <p className="text-xs text-gray-400 py-6 text-center col-span-2">No active announcements posted on the notices board.</p>
                 ) : (
                   studentAnnouncements.map(ann => (
-                    <div key={ann.id} className="p-4 border border-gray-200/80 rounded-2xl space-y-2 bg-white flex flex-col justify-between hover:border-gray-300 transition-colors text-xs">
-                      <div className="space-y-1">
+                    <div key={ann.id} className="p-4 border border-gray-200/80 rounded-2xl space-y-3 bg-white flex flex-col justify-between hover:border-gray-300 transition-colors text-xs shadow-3xs">
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase shadow-2xs ${typeBadgeColors[ann.event_type] || 'bg-gray-800 text-white'}`}>
                             {ann.event_type}
@@ -483,8 +483,57 @@ export default function Dashboard() {
                             {ann.event_date ? new Date(ann.event_date).toLocaleDateString('en-IN') : '—'}
                           </span>
                         </div>
-                        <h4 className="font-extrabold text-gray-900 text-sm leading-snug">{ann.subject}</h4>
-                        {ann.notes && <p className="text-gray-600 leading-normal font-medium mt-1">{ann.notes}</p>}
+                        
+                        <div className="space-y-1">
+                          <h4 className="font-extrabold text-gray-900 text-sm leading-snug">{ann.subject}</h4>
+                          
+                          {/* Cancellation details */}
+                          {ann.event_type === 'cancelled' && (
+                            <p className="text-red-700 font-semibold bg-red-50 border border-red-100 rounded-lg px-2.5 py-1.5 leading-normal mt-1">
+                              🔴 Class Cancelled: {ann.notes || 'No reason specified'}
+                            </p>
+                          )}
+
+                          {/* Extra Class Details */}
+                          {ann.event_type === 'extra' && (
+                            <div className="bg-green-50 border border-green-100 text-green-800 rounded-lg p-2.5 space-y-1 mt-1 font-medium leading-relaxed">
+                              <p className="flex items-center gap-1.5">⏰ Time: <strong>{ann.start_time ? ann.start_time.slice(0, 5) : '—'} - {ann.end_time ? ann.end_time.slice(0, 5) : '—'}</strong></p>
+                              {ann.notes && <p>Topic: <strong>{ann.notes}</strong></p>}
+                            </div>
+                          )}
+
+                          {/* Exam Details */}
+                          {ann.event_type === 'exam' && (
+                            <div className="bg-blue-50 border border-blue-100 text-blue-800 rounded-lg p-2.5 space-y-1.5 mt-1 font-medium leading-relaxed">
+                              <p className="flex items-center gap-1.5">⏰ Time: <strong>{ann.start_time ? ann.start_time.slice(0, 5) : '—'} - {ann.end_time ? ann.end_time.slice(0, 5) : '—'}</strong></p>
+                              {ann.total_marks && <p>🏆 Total Marks: <strong>{ann.total_marks} Marks</strong></p>}
+                              {ann.syllabus && <p className="text-gray-700">📖 Syllabus: {ann.syllabus}</p>}
+                              {ann.notes && <p className="text-gray-700 opacity-90">Note: {ann.notes}</p>}
+                            </div>
+                          )}
+
+                          {/* Rescheduled details */}
+                          {ann.event_type === 'rescheduled' && (
+                            <div className="bg-yellow-50 border border-yellow-100 text-yellow-850 rounded-lg p-2.5 space-y-1 mt-1 font-medium leading-relaxed">
+                              {ann.new_date && <p>📅 Rescheduled Date: <strong>{new Date(ann.new_date).toLocaleDateString('en-IN')}</strong></p>}
+                              {ann.new_time && <p>⏰ New Timing: <strong>{ann.new_time}</strong></p>}
+                              {ann.notes && <p className="text-gray-700">Reason: {ann.notes}</p>}
+                            </div>
+                          )}
+
+                          {/* Holiday Details */}
+                          {ann.event_type === 'holiday' && (
+                            <div className="bg-purple-50 border border-purple-100 text-purple-800 rounded-lg p-2.5 space-y-1 mt-1 font-medium leading-relaxed">
+                              <p className="text-gray-700">🎉 Holiday: <strong>{ann.subject}</strong></p>
+                              {ann.notes && <p className="text-gray-700">{ann.notes}</p>}
+                            </div>
+                          )}
+
+                          {/* Announcement Notice */}
+                          {ann.event_type === 'announcement' && ann.notes && (
+                            <p className="text-gray-600 leading-normal font-medium mt-1">{ann.notes}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
