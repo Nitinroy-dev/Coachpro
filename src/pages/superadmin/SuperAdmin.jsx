@@ -232,6 +232,31 @@ export default function SuperAdmin() {
     }
   }
 
+  const handleCancelTrial = async (inst) => {
+    if (!window.confirm(`Are you sure you want to cancel the free trial for ${inst.name}? This will lock their access immediately.`)) return
+    setLoading(true)
+    try {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      const { error } = await supabase
+        .from('institutes')
+        .update({
+          subscription_status: 'expired',
+          trial_ends_at: yesterday,
+          subscription_ends_at: null
+        })
+        .eq('id', inst.id)
+
+      if (error) throw error
+
+      alert(`Free trial cancelled for ${inst.name}!`)
+      fetchSuperadminData()
+    } catch (err) {
+      alert(`Failed to cancel trial: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Toggle Ban Status of Coaching Institute
   const handleToggleBan = async (inst) => {
     const isBanned = inst.subscription_status === 'suspended'
@@ -374,6 +399,15 @@ export default function SuperAdmin() {
                       >
                         🔧 Subscription
                       </Button>
+                      {i.subscription_status === 'trial' && (
+                        <Button
+                          size="xs"
+                          variant="danger"
+                          onClick={() => handleCancelTrial(i)}
+                        >
+                          Cancel Trial
+                        </Button>
+                      )}
                       <Button
                         size="xs"
                         variant="outline"
