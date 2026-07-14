@@ -33,6 +33,7 @@ export default function Settings() {
   const { profile, institute, refreshProfile } = useAuth()
   const toast = useToast()
   const instituteId = profile?.institute_id
+  const isStarter = !institute?.plan || institute?.plan === 'starter'
 
   // Tab State
   const [searchParams] = useSearchParams()
@@ -744,7 +745,20 @@ export default function Settings() {
         <form onSubmit={handleSaveIntegrations} className="space-y-6 max-w-3xl">
 
           {/* Wati Card */}
-          <Card className="p-5">
+          <Card className="p-5 relative overflow-hidden">
+            {isStarter && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center p-6 text-center">
+                <div className="space-y-2 max-w-md">
+                  <span className="bg-rose-50 border border-rose-200 text-rose-700 font-extrabold text-[10px] uppercase px-2.5 py-1 rounded-full flex items-center gap-1.5 w-fit mx-auto shadow-xs">
+                    🔒 Growth Feature
+                  </span>
+                  <h4 className="text-gray-900 font-extrabold text-sm">WhatsApp Integration Locked</h4>
+                  <p className="text-xs text-gray-500 leading-normal font-medium">
+                    WhatsApp auto-alerts, timetable logs, and payment alerts require the **Growth** subscription plan or higher.
+                  </p>
+                </div>
+              </div>
+            )}
             <CardHeader className="p-0 pb-4 border-b border-gray-100 flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2"><Phone size={18} className="text-green-600" /> Wati WhatsApp Broadcast API</CardTitle>
               <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${watiConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -798,7 +812,20 @@ export default function Settings() {
           </Card>
 
           {/* UPI Payments Card */}
-          <Card className="p-5">
+          <Card className="p-5 relative overflow-hidden">
+            {isStarter && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center p-6 text-center">
+                <div className="space-y-2 max-w-md">
+                  <span className="bg-rose-50 border border-rose-200 text-rose-700 font-extrabold text-[10px] uppercase px-2.5 py-1 rounded-full flex items-center gap-1.5 w-fit mx-auto shadow-xs">
+                    🔒 Growth Feature
+                  </span>
+                  <h4 className="text-gray-900 font-extrabold text-sm">UPI Direct Payment QR Locked</h4>
+                  <p className="text-xs text-gray-500 leading-normal font-medium">
+                    Generating dynamic QR codes for direct UPI fee collections is a premium feature available in **Growth** plan and higher.
+                  </p>
+                </div>
+              </div>
+            )}
             <CardHeader className="p-0 pb-4 border-b border-gray-100 flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <QrCode size={18} className="text-[#F97316]" /> UPI Direct QR Configuration

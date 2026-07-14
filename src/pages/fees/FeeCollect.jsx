@@ -427,7 +427,11 @@ export default function FeeCollect({ installment, instituteId, onClose, onSaved 
           onChange={set('mode')}
           options={[
             { value: 'cash', label: '💵 Cash' },
-            { value: 'upi', label: '📱 UPI' },
+            { 
+              value: 'upi', 
+              label: (institute?.plan === 'starter' || !institute?.plan) ? '🔒 📱 UPI (Upgrade to Growth)' : '📱 UPI',
+              disabled: (institute?.plan === 'starter' || !institute?.plan)
+            },
             { value: 'bank_transfer', label: '🏦 Bank Transfer' },
             { value: 'cheque', label: '📝 Cheque' },
           ]}
