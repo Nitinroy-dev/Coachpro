@@ -8,7 +8,7 @@ import Button from '../../components/ui/Button'
 import { Save } from 'lucide-react'
 
 export default function StudentForm({ student, batches = [], onClose, onSaved }) {
-  const { profile } = useAuth()
+  const { profile, institute } = useAuth()
   const [form, setForm] = useState({
     name: student?.name || '',
     phone: student?.phone || '',
@@ -89,6 +89,21 @@ export default function StudentForm({ student, batches = [], onClose, onSaved })
       if (student) {
         ;({ error } = await supabase.from('students').update(payload).eq('id', student.id))
       } else {
+        // Enforce Plan Limits
+        const plan = institute?.plan || 'starter'
+        const limits = { starter: 150, growth: 400, pro: 1000, enterprise: 999999 }
+        const currentLimit = limits[plan] || 150
+
+        const { count } = await supabase
+          .from('students')
+          .select('id', { count: 'exact', head: true })
+          .eq('institute_id', profile?.institute_id)
+          .eq('status', 'active')
+
+        if ((count || 0) >= currentLimit) {
+          throw new Error(`Your active plan (${plan.toUpperCase()}) limits your student roster to a maximum of ${currentLimit} active students. Please upgrade your plan in the Billing section to add more students.`)
+        }
+
         ;({ error } = await supabase.from('students').insert(payload))
       }
 

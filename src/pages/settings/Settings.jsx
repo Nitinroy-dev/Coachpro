@@ -417,6 +417,21 @@ export default function Settings() {
 
     setLoading(true)
     try {
+      // Plan Limit Check
+      const activePlan = institute?.plan || 'starter'
+      const PLAN_LIMITS = { starter: 2, growth: 6, pro: 15, enterprise: 999 }
+      const maxStaff = PLAN_LIMITS[activePlan] || 2
+
+      const { count: staffCount } = await supabase
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('institute_id', instituteId)
+        .in('role', ['admin', 'staff'])
+
+      if ((staffCount || 0) >= maxStaff) {
+        throw new Error(`Your active plan (${activePlan.toUpperCase()}) limits your institute to a maximum of ${maxStaff} staff members. Please upgrade your plan in the Billing section to add more staff.`);
+      }
+
       const password = generateSecurePassword()
       
       // Initialize isolated Supabase client
@@ -604,7 +619,14 @@ export default function Settings() {
 
             <form onSubmit={handleSaveProfile} className="space-y-4 pt-4">
               {/* Logo Select */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200/60">
+              <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200/60 relative">
+                {(institute?.plan === 'starter' || institute?.plan === 'growth' || !institute?.plan) && (
+                  <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-10 rounded-2xl flex items-center justify-center text-xs font-bold text-gray-500">
+                    <span className="bg-rose-50 text-rose-700 border border-rose-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-xs">
+                      🔒 Upgrade to PRO to unlock custom logo branding
+                    </span>
+                  </div>
+                )}
                 <div className="w-20 h-20 rounded-3xl bg-blue-100 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
                   {logoPreview ? (
                     <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />

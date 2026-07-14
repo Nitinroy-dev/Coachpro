@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Users, CreditCard, CalendarCheck, TrendingUp,
   BookOpen, Layers, AlertCircle, Clock, Plus, Calendar,
-  Activity, ArrowUpRight, CheckCircle2, XCircle, FileText, Sparkles, AlertTriangle, UserPlus
+  Activity, ArrowUpRight, CheckCircle2, XCircle, FileText, Sparkles, AlertTriangle, UserPlus, Lock
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -74,7 +74,7 @@ export default function Dashboard() {
   const [showFeeModal, setShowFeeModal] = useState(false)
 
   useEffect(() => {
-    if (profile?.role === 'student') {
+    if (profile?.role === 'student' || profile?.role === 'parent') {
       fetchStudentDashboardData()
     } else if (instituteId) {
       fetchComprehensiveDashboardData()
@@ -87,11 +87,20 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: sData, error: sErr } = await supabase
-        .from('students')
-        .select('*, batches(name, courses(name))')
-        .eq('email', user.email)
-        .maybeSingle()
+      const isParent = profile?.role === 'parent'
+      let query = supabase.from('students').select('*, batches(name, courses(name))')
+
+      if (isParent) {
+        if (profile.linked_student_id) {
+          query = query.eq('id', profile.linked_student_id)
+        } else {
+          query = query.eq('parent_email', user.email)
+        }
+      } else {
+        query = query.eq('email', user.email)
+      }
+
+      const { data: sData, error: sErr } = await query.maybeSingle()
 
       if (sErr) throw sErr
       if (!sData) {
@@ -326,8 +335,32 @@ export default function Dashboard() {
     return 'evening'
   }
 
-  // Student view rendering logic
-  if (profile?.role === 'student') {
+  // Student or Parent view rendering logic
+  if (profile?.role === 'student' || profile?.role === 'parent') {
+    const activePlan = institute?.plan || 'starter'
+    if (activePlan === 'starter' || activePlan === 'growth') {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <Card className="p-8 max-w-md w-full text-center space-y-4 shadow-xl border border-gray-200 rounded-3xl bg-white">
+            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+              <Lock size={32} />
+            </div>
+            <h2 className="text-xl font-extrabold text-gray-900">Portal Access Locked</h2>
+            <p className="text-xs text-gray-500 leading-relaxed font-medium">
+              Your coaching institute (<strong className="text-gray-700">{institute?.name || 'your coaching center'}</strong>) is currently on the 
+              <span className="bg-rose-50 text-rose-700 font-bold px-2.5 py-0.5 rounded-full ml-1 text-[10px] uppercase border border-rose-200">{activePlan.toUpperCase()} Plan</span>.
+            </p>
+            <p className="text-xs text-gray-650 leading-relaxed font-medium">
+              Student & Parent login portals are premium features available starting from the <strong className="text-[#1E3A8A]">PRO</strong> plan tier.
+            </p>
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 text-[11px] text-blue-900 font-semibold leading-normal">
+              💡 Please ask your coaching administrator to upgrade their plan under Billing & Plans to activate portal login access.
+            </div>
+          </Card>
+        </div>
+      )
+    }
+
     const typeBadgeColors = {
       cancelled: 'bg-red-500 text-white',
       extra: 'bg-green-500 text-white',
@@ -337,13 +370,15 @@ export default function Dashboard() {
       announcement: 'bg-indigo-500 text-white',
     }
 
+    const displayName = profile?.name || (profile?.role === 'parent' ? 'Parent' : 'Student')
+
     return (
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Welcome Back, {profile?.name || 'Student'} 👋
+              Welcome Back, {displayName} 👋
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Course: <strong className="text-gray-800">{studentRecord?.batches?.courses?.name || 'Academic Course'}</strong> · Batch: <strong className="text-[#1E3A8A]">{studentRecord?.batches?.name || 'Assigned Batch'}</strong>

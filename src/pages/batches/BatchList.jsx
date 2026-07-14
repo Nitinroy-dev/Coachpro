@@ -13,7 +13,7 @@ import Spinner from '../../components/ui/Spinner'
 import { GridCardSkeleton } from '../../components/ui/Skeleton'
 
 export default function BatchList() {
-  const { profile } = useAuth()
+  const { profile, institute } = useAuth()
   const instituteId = profile?.institute_id
 
   const [batches, setBatches] = useState([])
@@ -171,6 +171,20 @@ export default function BatchList() {
         // Remove old class schedule days for this batch before rewriting
         await supabase.from('class_schedule').delete().eq('batch_id', editing.id)
       } else {
+        // Enforce Plan Limits
+        const activePlan = institute?.plan || 'starter'
+        const PLAN_LIMITS = { starter: 8, growth: 20, pro: 999, enterprise: 9999 }
+        const maxBatches = PLAN_LIMITS[activePlan] || 8
+
+        const { count: batchCount } = await supabase
+          .from('batches')
+          .select('id', { count: 'exact', head: true })
+          .eq('institute_id', instituteId)
+
+        if ((batchCount || 0) >= maxBatches) {
+          throw new Error(`Your active plan (${activePlan.toUpperCase()}) limits your institute to a maximum of ${maxBatches} batches. Please upgrade your plan in the Billing section to create more batches.`);
+        }
+
         const { data: newBatch, error: err } = await supabase.from('batches').insert(payload).select('id').single()
         if (err) throw err
         savedBatchId = newBatch.id

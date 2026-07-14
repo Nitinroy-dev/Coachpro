@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bell, Send, Filter, Search, User, Layers, Info, Calendar, Download, Trash2, ShieldAlert } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Bell, Send, Filter, Search, User, Layers, Info, Calendar, Download, Trash2, ShieldAlert, Lock, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -14,6 +15,7 @@ import Modal from '../../components/ui/Modal'
 export default function NotificationCenter() {
   const { profile, institute } = useAuth()
   const toast = useToast()
+  const navigate = useNavigate()
   const instituteId = profile?.institute_id
 
   // Data states
@@ -423,7 +425,26 @@ export default function NotificationCenter() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Form: Send Message */}
-        <Card className="lg:col-span-2 p-5 h-fit">
+        <Card className="lg:col-span-2 p-5 h-fit relative">
+          {(!institute?.plan || institute?.plan === 'starter') && (
+            <div className="absolute inset-0 bg-white/75 backdrop-blur-xs z-10 rounded-3xl flex items-center justify-center p-6 text-center">
+              <div className="space-y-3 max-w-sm">
+                <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <AlertCircle size={24} />
+                </div>
+                <h4 className="font-extrabold text-gray-900 text-sm">WhatsApp Alerts & Notice Boards Locked</h4>
+                <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                  Automated WhatsApp communications, custom broadcasts, and template notice dispatchers are premium features.
+                </p>
+                <p className="text-xs text-gray-650 font-bold">
+                  Upgrade to the <strong className="text-[#1E3A8A]">GROWTH</strong> plan tier to unlock automatic student/parent alerts!
+                </p>
+                <Button variant="accent" size="sm" onClick={() => navigate('/billing')}>
+                  View Billing & Plans
+                </Button>
+              </div>
+            </div>
+          )}
           <CardHeader className="p-0 pb-4 border-b border-gray-100 flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Send size={18} className="text-[#1E3A8A]" /> Broadcast New Alert
@@ -554,7 +575,21 @@ export default function NotificationCenter() {
         </Card>
 
         {/* Right Info: Alert Automation Info */}
-        <Card className="p-5 h-fit bg-gradient-to-br from-indigo-900 to-[#1E3A8A] text-white border-0 shadow-xl">
+        <Card className="p-5 h-fit bg-gradient-to-br from-indigo-900 to-[#1E3A8A] text-white border-0 shadow-xl relative overflow-hidden">
+          {(!institute?.plan || institute?.plan === 'starter') && (
+            <div className="absolute inset-0 bg-indigo-950/90 backdrop-blur-xs z-10 p-6 flex flex-col justify-center text-center space-y-3">
+              <div className="w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <AlertCircle size={24} />
+              </div>
+              <h4 className="font-extrabold text-white text-sm">Automated Alerts Locked</h4>
+              <p className="text-xs text-blue-200 font-medium leading-relaxed">
+                Daily scheduler notifications for fee dues, reminders, and absences are disabled.
+              </p>
+              <p className="text-xs text-orange-300 font-bold">
+                Upgrade to the <strong className="text-white">GROWTH</strong> plan to enable automated messaging!
+              </p>
+            </div>
+          )}
           <CardHeader className="p-0 pb-4 border-b border-white/10 flex items-center justify-between">
             <CardTitle className="text-base text-white flex items-center gap-2">
               <Calendar size={18} className="text-[#F97316]" /> Automated Reminders
