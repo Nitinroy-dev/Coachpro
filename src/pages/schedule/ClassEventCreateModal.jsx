@@ -130,6 +130,63 @@ export default function ClassEventCreateModal({ onClose, onSaved }) {
 
       if (evtErr) throw evtErr
 
+      // 1. Fetch target students to alert in-app
+      let targetStudents = []
+      if (targetBatchId) {
+        const { data: bStuds } = await supabase
+          .from('students')
+          .select('id, name')
+          .eq('batch_id', targetBatchId)
+          .eq('status', 'active')
+        targetStudents = bStuds || []
+      } else {
+        const { data: allStuds } = await supabase
+          .from('students')
+          .select('id, name')
+          .eq('institute_id', instituteId)
+          .eq('status', 'active')
+        targetStudents = allStuds || []
+      }
+
+      // 2. Build descriptive notification message
+      let notificationMsg = ''
+      if (eventType === 'cancelled') {
+        notificationMsg = `Class Cancelled: The scheduled class for ${form.subject || 'your course'} on ${form.date} has been cancelled. Reason: ${reasonText}`
+      } else if (eventType === 'extra') {
+        notificationMsg = `Extra Class: An extra class for ${form.subject || 'your course'} has been scheduled on ${form.date} from ${form.start_time || ''} to ${form.end_time || ''}. Topic: ${reasonText || 'General revision'}`
+      } else if (eventType === 'rescheduled') {
+        notificationMsg = `Class Rescheduled: The class for ${form.subject || 'your course'} originally scheduled on ${form.original_date || ''} has been rescheduled to ${form.new_date || ''} at ${form.new_time || ''}.`
+      } else if (eventType === 'holiday') {
+        notificationMsg = `Holiday Declared: ${form.holiday_name || 'Holiday'} from ${form.start_date || ''} to ${form.end_date || ''}. Resume classes on: ${form.resume_date || ''}.`
+      } else if (eventType === 'exam') {
+        notificationMsg = `Exam Scheduled: ${form.subject || 'your course'} test has been scheduled on ${form.date} from ${form.start_time || ''} to ${form.end_time || ''}. Syllabus: ${form.syllabus || ''}. Total Marks: ${form.total_marks || ''}.`
+      } else {
+        notificationMsg = `Announcement: ${form.subject || 'Notice'}. Details: ${reasonText || ''}`
+      }
+
+      // 3. Map event type to notification type
+      const typeMapping = {
+        cancelled: 'class_cancelled',
+        extra: 'extra_class',
+        rescheduled: 'rescheduled',
+        holiday: 'holiday',
+        exam: 'exam',
+        announcement: 'announcement'
+      }
+
+      // 4. Create in-app notification records
+      if (targetStudents.length > 0) {
+        const notifRows = targetStudents.map(s => ({
+          institute_id: instituteId,
+          student_id: s.id,
+          type: typeMapping[eventType] || 'announcement',
+          message: notificationMsg,
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        }))
+        await supabase.from('notifications').insert(notifRows)
+      }
+
       // Auto mark holiday in attendance if cancelled class event
       if (eventType === 'cancelled' && form.auto_holiday && targetBatchId) {
         const { data: studList } = await supabase.from('students').select('id').eq('batch_id', targetBatchId).eq('status', 'active')

@@ -57,7 +57,10 @@ export default function NotificationCenter() {
   useEffect(() => {
     if (instituteId) {
       fetchNotifications()
-      fetchDropdownData()
+      const isStaffOrAdmin = profile?.role !== 'student' && profile?.role !== 'parent'
+      if (isStaffOrAdmin) {
+        fetchDropdownData()
+      }
     }
   }, [instituteId])
 
@@ -75,13 +78,31 @@ export default function NotificationCenter() {
   const fetchNotifications = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*, students(name, phone, student_code)')
-        .eq('institute_id', instituteId)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      setNotifications(data || [])
+      const isStudent = profile?.role === 'student'
+      const isParent = profile?.role === 'parent'
+
+      if (isStudent || isParent) {
+        const studentId = isStudent ? profile.id : profile.linked_student_id
+        if (studentId) {
+          const { data, error } = await supabase
+            .from('notifications')
+            .select('*, students(name, phone, student_code)')
+            .eq('student_id', studentId)
+            .order('created_at', { ascending: false })
+          if (error) throw error
+          setNotifications(data || [])
+        } else {
+          setNotifications([])
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*, students(name, phone, student_code)')
+          .eq('institute_id', instituteId)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        setNotifications(data || [])
+      }
     } catch (err) {
       console.error('Fetch notifications error:', err)
       toast.error('Failed to load notification history.')
@@ -298,6 +319,96 @@ export default function NotificationCenter() {
     } catch (err) {
       toast.error(err.message)
     }
+  }
+
+  const isStudent = profile?.role === 'student'
+  const isParent = profile?.role === 'parent'
+
+  if (isStudent || isParent) {
+    const studentId = isStudent ? profile.id : profile.linked_student_id
+    if (!studentId) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+              <p className="text-sm text-gray-500">Your personal inbox and announcements board</p>
+            </div>
+          </div>
+          <Card className="p-8 text-center text-gray-400">
+            <ShieldAlert className="mx-auto mb-2 text-amber-500" size={32} />
+            Parent account is not linked to any student profile. Please ask the administrator to link your profile.
+          </Card>
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Header bar */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Inbox & Alerts</h1>
+            <p className="text-sm text-gray-500">Stay updated with class cancellations, extra sessions, exams, and fee announcements</p>
+          </div>
+        </div>
+
+        {/* Notifications Feed */}
+        <Card className="p-5">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3 gap-3 mb-4">
+            <h3 className="text-sm font-extrabold text-[#1E3A8A] flex items-center gap-2">
+              <Bell size={18} className="text-[#F97316]" /> Notification Feed ({notifications.length})
+            </h3>
+          </div>
+
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="flex flex-col gap-2 items-center justify-center text-gray-400">
+                <div className="w-8 h-8 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin" />
+                <span>Loading your inbox feed...</span>
+              </div>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="p-12 text-center text-gray-400 font-bold border border-dashed border-gray-200 rounded-2xl">
+              <Bell size={32} className="mx-auto mb-3 text-gray-300" />
+              <span>No notifications in your feed yet.</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {notifications.map(n => (
+                <div key={n.id} className="p-4 border border-gray-100 hover:border-gray-200 bg-white rounded-2xl shadow-xs transition-colors flex items-start gap-4">
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-xl flex-shrink-0">
+                    <Bell size={20} />
+                  </div>
+                  <div className="flex-1 space-y-2 text-xs">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase shadow-2xs ${
+                        n.type === 'class_cancelled' ? 'bg-red-500 text-white' :
+                        n.type === 'extra_class' ? 'bg-green-500 text-white' :
+                        n.type === 'exam' ? 'bg-blue-500 text-white' :
+                        n.type === 'holiday' ? 'bg-purple-500 text-white' :
+                        n.type === 'fee_due' ? 'bg-orange-500 text-white' :
+                        n.type === 'fee_paid' ? 'bg-green-600 text-white' :
+                        'bg-gray-800 text-white'
+                      }`}>
+                        {n.type?.replace('_', ' ') || 'Notification'}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400 font-mono">
+                        {n.sent_at 
+                          ? new Date(n.sent_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) 
+                          : new Date(n.created_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })
+                        }
+                      </span>
+                    </div>
+                    <p className="font-semibold text-gray-850 leading-relaxed text-sm whitespace-pre-line">{n.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    )
   }
 
   return (

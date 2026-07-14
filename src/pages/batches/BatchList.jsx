@@ -283,6 +283,26 @@ export default function BatchList() {
 
       if (insertErr) throw insertErr
 
+      // Fetch batch students to alert in-app
+      const { data: bStuds } = await supabase
+        .from('students')
+        .select('id')
+        .eq('batch_id', selectedBatchModal.id)
+        .eq('status', 'active')
+
+      if (bStuds && bStuds.length > 0) {
+        const notifMsg = `Class Cancelled: The scheduled class for today (${todayStr}) has been cancelled. Reason: ${cancelReason.trim()}`
+        const notifRows = bStuds.map(s => ({
+          institute_id: instituteId,
+          student_id: s.id,
+          type: 'class_cancelled',
+          message: notifMsg,
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        }))
+        await supabase.from('notifications').insert(notifRows)
+      }
+
       setTodayStatus('cancelled')
       setShowCancelModal(false)
       setCancelReason('')
