@@ -164,7 +164,7 @@ export default function Layout() {
         )}
 
         {/* Sticky Trial Banner */}
-        <TrialBanner />
+        {!isSuperAdmin && <TrialBanner />}
 
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Sidebar (Desktop / Tablet) */}
@@ -296,16 +296,18 @@ export default function Layout() {
         )}
 
         {/* Floating Report Issue FAB */}
-        <button
-          onClick={() => setShowBugModal(true)}
-          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[999] bg-[#E11D48] hover:bg-[#BE123C] text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 group"
-          title="Report a bug or issue"
-        >
-          <AlertCircle size={22} className="group-hover:rotate-12 transition-transform" />
-          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 text-xs font-extrabold uppercase tracking-wider transition-all duration-300">
-            Report Issue
-          </span>
-        </button>
+        {!isSuperAdmin && (
+          <button
+            onClick={() => setShowBugModal(true)}
+            className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[999] bg-[#E11D48] hover:bg-[#BE123C] text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 group"
+            title="Report a bug or issue"
+          >
+            <AlertCircle size={22} className="group-hover:rotate-12 transition-transform" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 text-xs font-extrabold uppercase tracking-wider transition-all duration-300">
+              Report Issue
+            </span>
+          </button>
+        )}
 
         {/* Report Issue Modal */}
         {showBugModal && (

@@ -16,14 +16,19 @@ const pageTitles = {
 }
 
 export default function Header({ onMenuToggle }) {
-  const { institute, showInstallBtn, handleInstall } = useAuth()
+  const { user, institute, showInstallBtn, handleInstall } = useAuth()
   const { unreadCount } = useInAppNotifications()
   const location = useLocation()
 
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
+  const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
+
   // Find best matching page title
-  const title = Object.entries(pageTitles).find(
-    ([path]) => location.pathname === path || location.pathname.startsWith(path + '/')
-  )?.[1] || 'Batch Desk'
+  const title = isSuperAdmin 
+    ? 'Superadmin Operations Hub' 
+    : (Object.entries(pageTitles).find(
+        ([path]) => location.pathname === path || location.pathname.startsWith(path + '/')
+      )?.[1] || 'Batch Desk')
 
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center gap-4">
@@ -39,8 +44,10 @@ export default function Header({ onMenuToggle }) {
       {/* Page title */}
       <div className="flex-1 min-w-0">
         <h1 className="text-lg font-semibold text-gray-900 truncate">{title}</h1>
-        {institute && (
-          <p className="text-xs text-gray-400 hidden sm:block truncate">{institute.name}</p>
+        {isSuperAdmin ? (
+          <p className="text-xs text-[#F97316] font-bold hidden sm:block truncate">Global Operations Controller</p>
+        ) : (
+          institute && <p className="text-xs text-gray-400 hidden sm:block truncate">{institute.name}</p>
         )}
       </div>
 
@@ -56,7 +63,7 @@ export default function Header({ onMenuToggle }) {
           </button>
         )}
         {/* Subscription badge */}
-        {institute?.subscription_status === 'trial' && (
+        {!isSuperAdmin && institute?.subscription_status === 'trial' && (
           <div className="hidden sm:flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs font-medium px-3 py-1.5 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
             Trial Active
@@ -64,14 +71,16 @@ export default function Header({ onMenuToggle }) {
         )}
 
         {/* Notification bell linking to notifications panel or toggling read */}
-        <Link to="/notifications" className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-          <Bell size={18} />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#F97316] text-white font-extrabold text-[9px] flex items-center justify-center border border-white leading-none shadow-xs">
-              {unreadCount}
-            </span>
-          )}
-        </Link>
+        {!isSuperAdmin && (
+          <Link to="/notifications" className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#F97316] text-white font-extrabold text-[9px] flex items-center justify-center border border-white leading-none shadow-xs">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
+        )}
       </div>
     </header>
   )

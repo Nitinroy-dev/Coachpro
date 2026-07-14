@@ -329,6 +329,28 @@ export default function SuperAdmin() {
   const totalARR = successfulPayments.reduce((s, p) => s + (Number(p.total_amount) || 0), 0)
   const totalMRR = Math.round(totalARR / 12)
 
+  // This Month's calculations
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  
+  const thisMonthRevenue = successfulPayments
+    .filter(p => new Date(p.created_at) >= startOfMonth)
+    .reduce((s, p) => s + (Number(p.total_amount) || 0), 0)
+
+  const thisMonthSignups = institutes.filter(i => new Date(i.created_at) >= startOfMonth).length
+
+  // Subscriptions Breakdown
+  const totalInstitutesCount = institutes.length
+  const trialInstitutesCount = institutes.filter(i => i.subscription_status === 'trial').length
+  const activeInstitutesCount = institutes.filter(i => i.subscription_status === 'active').length
+  const expiredInstitutesCount = institutes.filter(i => i.subscription_status === 'expired' || i.subscription_status === 'suspended').length
+
+  // Plan distribution
+  const starterCount = institutes.filter(i => i.plan === 'starter' || !i.plan).length
+  const growthCount = institutes.filter(i => i.plan === 'growth').length
+  const proCount = institutes.filter(i => i.plan === 'pro').length
+  const enterpriseCount = institutes.filter(i => i.plan === 'enterprise').length
+
   return (
     <div className="space-y-6">
       {/* Superadmin Banner Header */}
@@ -519,15 +541,118 @@ export default function SuperAdmin() {
 
       {/* TAB 4: REVENUE OVERVIEW */}
       {activeTab === 'revenue' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
-            <p className="text-xs uppercase font-bold text-green-700">Estimated MRR (Monthly Recurring Revenue)</p>
-            <p className="text-3xl font-extrabold text-green-800 mt-1">₹{totalMRR.toLocaleString('en-IN')}</p>
-          </Card>
-          <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
-            <p className="text-xs uppercase font-bold text-[#1E3A8A]">Total ARR (Annual Gross Collections)</p>
-            <p className="text-3xl font-extrabold text-[#1E3A8A] mt-1">₹{totalARR.toLocaleString('en-IN')}</p>
-          </Card>
+        <div className="space-y-6">
+          {/* Executive KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-3xl shadow-xs">
+              <span className="text-gray-400 block uppercase font-bold text-[9px] tracking-wider">Gross MRR</span>
+              <span className="text-2xl font-extrabold text-[#1E3A8A] mt-1 block">₹{totalMRR.toLocaleString('en-IN')}</span>
+              <span className="text-[10px] text-gray-500 block mt-1">Calculated ARR Average</span>
+            </Card>
+
+            <Card className="p-5 bg-gradient-to-br from-emerald-50 to-green-50 border border-green-200 rounded-3xl shadow-xs">
+              <span className="text-gray-400 block uppercase font-bold text-[9px] tracking-wider">Revenue This Month</span>
+              <span className="text-2xl font-extrabold text-green-800 mt-1 block">₹{thisMonthRevenue.toLocaleString('en-IN')}</span>
+              <span className="text-[10px] text-gray-500 block mt-1">Gross current calendar month</span>
+            </Card>
+
+            <Card className="p-5 bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-3xl shadow-xs">
+              <span className="text-gray-400 block uppercase font-bold text-[9px] tracking-wider">Total ARR Collections</span>
+              <span className="text-2xl font-extrabold text-purple-800 mt-1 block">₹{totalARR.toLocaleString('en-IN')}</span>
+              <span className="text-[10px] text-gray-500 block mt-1">Cumulative sales all-time</span>
+            </Card>
+
+            <Card className="p-5 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-3xl shadow-xs">
+              <span className="text-gray-400 block uppercase font-bold text-[9px] tracking-wider">Signups This Month</span>
+              <span className="text-2xl font-extrabold text-orange-850 mt-1 block">{thisMonthSignups} New</span>
+              <span className="text-[10px] text-gray-500 block mt-1">Institutes registered</span>
+            </Card>
+          </div>
+
+          {/* Operational Breakdowns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Account Status Gating Metrics */}
+            <Card className="p-5 rounded-3xl border border-gray-100 bg-white">
+              <h3 className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider text-[11px] border-b pb-2">Institute Status Breakdown</h3>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-gray-600">Active Trials (Free)</span>
+                    <span className="text-gray-900">{trialInstitutesCount} / {totalInstitutesCount}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-orange-550 h-full rounded-full" style={{ width: `${totalInstitutesCount ? (trialInstitutesCount / totalInstitutesCount) * 100 : 0}%` }} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-gray-600">Active Premium Accounts</span>
+                    <span className="text-gray-950">{activeInstitutesCount} / {totalInstitutesCount}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-green-550 h-full rounded-full" style={{ width: `${totalInstitutesCount ? (activeInstitutesCount / totalInstitutesCount) * 100 : 0}%` }} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-gray-600">Expired / Suspended</span>
+                    <span className="text-gray-950">{expiredInstitutesCount} / {totalInstitutesCount}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-red-550 h-full rounded-full" style={{ width: `${totalInstitutesCount ? (expiredInstitutesCount / totalInstitutesCount) * 100 : 0}%` }} />
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Plan Tier Distributions */}
+            <Card className="p-5 rounded-3xl border border-gray-100 bg-white">
+              <h3 className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider text-[11px] border-b pb-2">Plan Tier Distribution</h3>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-gray-600">Starter Tiers (Basic)</span>
+                    <span className="text-gray-950">{starterCount} ({totalInstitutesCount ? Math.round((starterCount / totalInstitutesCount) * 100) : 0}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-slate-400 h-full rounded-full" style={{ width: `${totalInstitutesCount ? (starterCount / totalInstitutesCount) * 100 : 0}%` }} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-gray-600">Growth Tiers (Mid)</span>
+                    <span className="text-gray-950">{growthCount} ({totalInstitutesCount ? Math.round((growthCount / totalInstitutesCount) * 100) : 0}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-blue-550 h-full rounded-full" style={{ width: `${totalInstitutesCount ? (growthCount / totalInstitutesCount) * 100 : 0}%` }} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-gray-600">Pro Tiers (Advanced)</span>
+                    <span className="text-gray-950">{proCount} ({totalInstitutesCount ? Math.round((proCount / totalInstitutesCount) * 100) : 0}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-indigo-650 h-full rounded-full" style={{ width: `${totalInstitutesCount ? (proCount / totalInstitutesCount) * 100 : 0}%` }} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-gray-600">Enterprise Tiers (Unlimited)</span>
+                    <span className="text-gray-950">{enterpriseCount} ({totalInstitutesCount ? Math.round((enterpriseCount / totalInstitutesCount) * 100) : 0}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-yellow-550 h-full rounded-full" style={{ width: `${totalInstitutesCount ? (enterpriseCount / totalInstitutesCount) * 100 : 0}%` }} />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
 
