@@ -8,7 +8,8 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useInAppNotifications } from '../../hooks/useInAppNotifications'
 import {
   LayoutDashboard, Users, CreditCard, CalendarCheck, MoreHorizontal,
-  BookOpen, Clock, Bell, Settings, LogOut, ShieldCheck, X, GraduationCap, Calendar
+  BookOpen, Clock, Bell, Settings, LogOut, ShieldCheck, X, GraduationCap, Calendar,
+  AlertCircle
 } from 'lucide-react'
 
 export default function Layout() {
@@ -19,6 +20,67 @@ export default function Layout() {
   const { inAppNotifs, unreadCount, markAllRead } = useInAppNotifications()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Bug & Issue Reporting states
+  const [showBugModal, setShowBugModal] = useState(false)
+  const [bugForm, setBugForm] = useState({ title: '', category: 'Bug/Glitch', description: '' })
+  const [bugSending, setBugSending] = useState(false)
+
+  const handleBugSubmit = async (e) => {
+    e.preventDefault()
+    if (!bugForm.title.trim() || !bugForm.description.trim()) {
+      alert('Please fill in all required fields.')
+      return
+    }
+    setBugSending(true)
+    try {
+      const emailHtml = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;">
+          <h2 style="color: #e11d48; margin-top: 0; display: flex; align-items: center; gap: 8px;">🚨 CoachPro Bug & Issue Report</h2>
+          <p><strong>Reported By:</strong> ${profile?.name || user?.email || 'Unknown User'} (${profile?.role?.toUpperCase() || 'UNKNOWN'})</p>
+          <p><strong>User Email:</strong> ${user?.email || 'N/A'}</p>
+          <p><strong>Institute Name:</strong> ${institute?.name || 'N/A'}</p>
+          <p><strong>Category:</strong> ${bugForm.category}</p>
+          <p><strong>Issue Title:</strong> ${bugForm.title}</p>
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          <h3 style="color: #1e3a8a;">Description / Steps to Reproduce:</h3>
+          <p style="white-space: pre-wrap; color: #475569; line-height: 1.6; font-size: 14px;">${bugForm.description}</p>
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          <h3 style="color: #1e3a8a;">System & Device Details:</h3>
+          <ul style="color: #475569; font-size: 13px; line-height: 1.6; padding-left: 20px;">
+            <li><strong>URL Path:</strong> ${window.location.href}</li>
+            <li><strong>User Agent:</strong> ${navigator.userAgent}</li>
+            <li><strong>Device Time:</strong> ${new Date().toLocaleString('en-IN')}</li>
+          </ul>
+        </div>
+      `
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to: 'contact@nrtechworks.online',
+          subject: `[CoachPro Bug Report] ${bugForm.category}: ${bugForm.title}`,
+          html: emailHtml
+        })
+      })
+
+      if (!response.ok) {
+        const errData = await response.json()
+        throw new Error(errData.error || 'Failed to dispatch email.')
+      }
+
+      alert('Thank you! Your bug report has been successfully dispatched to the development team.')
+      setBugForm({ title: '', category: 'Bug/Glitch', description: '' })
+      setShowBugModal(false)
+    } catch (err) {
+      alert(`Failed to send bug report: ${err.message}`)
+    } finally {
+      setBugSending(false)
+    }
+  }
 
   // Show a floating banner for every new incoming in-app notification
   useEffect(() => {
@@ -223,6 +285,120 @@ export default function Layout() {
                   Sign out of Batch Desk
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Report Issue FAB */}
+        <button
+          onClick={() => setShowBugModal(true)}
+          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[999] bg-[#E11D48] hover:bg-[#BE123C] text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 group"
+          title="Report a bug or issue"
+        >
+          <AlertCircle size={22} className="group-hover:rotate-12 transition-transform" />
+          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 text-xs font-extrabold uppercase tracking-wider transition-all duration-300">
+            Report Issue
+          </span>
+        </button>
+
+        {/* Report Issue Modal */}
+        {showBugModal && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+              onClick={() => setShowBugModal(false)}
+            />
+            <div className="relative bg-white rounded-3xl w-full max-w-lg p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 text-lg">Report an Issue / Bug</h3>
+                    <p className="text-xs text-gray-500">Submit glitch or system reports directly to technical support</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowBugModal(false)}
+                  className="p-2 rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleBugSubmit} className="space-y-4 text-xs font-medium text-gray-700">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Category *</label>
+                  <select
+                    value={bugForm.category}
+                    onChange={(e) => setBugForm({ ...bugForm, category: e.target.value })}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-xs"
+                  >
+                    <option value="Bug/Glitch">Bug / Glitch 🐛</option>
+                    <option value="Billing/Fees">Billing / Fees 💸</option>
+                    <option value="Attendance">Attendance 📅</option>
+                    <option value="Feature Request">Feature Request ✨</option>
+                    <option value="Other">Other / Feedback 💬</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Issue Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Short description of the bug (e.g. Cannot download receipt)"
+                    value={bugForm.title}
+                    onChange={(e) => setBugForm({ ...bugForm, title: e.target.value })}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Describe the Issue *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Please explain what happened, steps to reproduce, or any error messages you saw."
+                    value={bugForm.description}
+                    onChange={(e) => setBugForm({ ...bugForm, description: e.target.value })}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-xs leading-relaxed"
+                  />
+                </div>
+
+                {/* Auto captured properties for developers */}
+                <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100 space-y-1.5 text-[10px] text-gray-500">
+                  <p className="font-bold text-gray-700 uppercase tracking-wider text-[9px]">Captured Debug Details (Sent Automatically)</p>
+                  <p>👤 <strong>User:</strong> {profile?.name || user?.email || 'Guest'} ({profile?.role || 'Visitor'})</p>
+                  <p>🏢 <strong>Institute:</strong> {institute?.name || 'N/A'}</p>
+                  <p>🔗 <strong>Active URL:</strong> {window.location.pathname}</p>
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowBugModal(false)}
+                    className="px-4 py-2.5 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={bugSending}
+                    className="px-5 py-2.5 rounded-2xl bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {bugSending ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Sending Report...
+                      </>
+                    ) : (
+                      'Submit Bug Report'
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

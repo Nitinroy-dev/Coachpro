@@ -17,10 +17,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { apiKey, from, to, subject, html } = req.body;
+  let { apiKey, from, to, subject, html } = req.body;
+
+  // Fallback to secure system environment variables if not passed by the client
+  if (!apiKey || apiKey === 'undefined' || apiKey === 'null') {
+    apiKey = process.env.SYSTEM_RESEND_API_KEY;
+  }
+  if (!from || from === 'undefined' || from === 'null') {
+    from = process.env.SYSTEM_RESEND_SENDER || 'noreply@coachpro.nrtechworks.online';
+  }
 
   if (!apiKey || !from || !to || !subject || !html) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+    return res.status(400).json({ error: 'Missing required parameters (apiKey, from, to, subject, html)' });
   }
 
   try {
