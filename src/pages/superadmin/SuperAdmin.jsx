@@ -624,7 +624,7 @@ export default function SuperAdmin() {
               value={subForm.status}
               onChange={(e) => setSubForm({ ...subForm, status: e.target.value })}
               options={[
-                { value: 'trial', label: 'Free Trial' },
+                ...(subForm.status === 'trial' ? [{ value: 'trial', label: 'Free Trial (Active)' }] : []),
                 { value: 'active', label: 'Active Plan' },
                 { value: 'expired', label: 'Expired' },
                 { value: 'suspended', label: 'Suspended / Banned' },
