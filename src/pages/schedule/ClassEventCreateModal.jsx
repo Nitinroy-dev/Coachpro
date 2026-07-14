@@ -82,7 +82,16 @@ export default function ClassEventCreateModal({ onClose, onSaved }) {
   // Build template message for Step 2
   const buildTemplateMessage = () => {
     const targetBatchNames = form.all_batches ? 'All Batches' : batches.filter(b => selectedBatches.includes(b.id)).map(b => b.name).join(', ')
-    const reasonText = form.custom_reason || form.reason_preset
+    
+    let reasonText = form.custom_reason || ''
+    if (!reasonText) {
+      if (eventType === 'cancelled') reasonText = form.reason_preset
+      else if (eventType === 'holiday') reasonText = form.holiday_name
+      else if (eventType === 'extra') reasonText = 'General revision'
+      else if (eventType === 'exam') reasonText = 'Scheduled exam'
+      else if (eventType === 'rescheduled') reasonText = 'Schedule adjustment'
+      else if (eventType === 'announcement') reasonText = form.title || form.subject || 'Important Notice'
+    }
 
     if (eventType === 'cancelled') {
       return `🔴 Class Cancelled\nDear Parent,\n${targetBatchNames} ki ${form.subject || 'Class'} class ${form.date} ko ${form.original_time} pe cancel ho gayi.\nReason: ${reasonText}\n— ${instName}`
@@ -108,8 +117,20 @@ export default function ClassEventCreateModal({ onClose, onSaved }) {
   const handleFinalSubmit = async () => {
     setLoading(true)
     try {
-      const targetBatchId = selectedBatches[0] || null
-      const reasonText = form.custom_reason || form.reason_preset
+      const isHolidayOrAnnouncement = eventType === 'holiday' || eventType === 'announcement'
+      const targetBatchId = isHolidayOrAnnouncement && form.all_batches 
+        ? null 
+        : (selectedBatches[0] || null)
+
+      let reasonText = form.custom_reason || ''
+      if (!reasonText) {
+        if (eventType === 'cancelled') reasonText = form.reason_preset
+        else if (eventType === 'holiday') reasonText = form.holiday_name
+        else if (eventType === 'extra') reasonText = 'General revision'
+        else if (eventType === 'exam') reasonText = 'Scheduled exam'
+        else if (eventType === 'rescheduled') reasonText = 'Schedule adjustment'
+        else if (eventType === 'announcement') reasonText = form.title || form.subject || 'Important Notice'
+      }
 
       // Insert Event into class_events table
       const { data: newEvt, error: evtErr } = await supabase
