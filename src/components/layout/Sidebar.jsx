@@ -147,6 +147,10 @@ export default function Sidebar({ open = true, onClose }) {
               Sign out
             </span>
           </button>
+          
+          <div className="mt-3 pt-3 border-t border-blue-500/20 text-[10px] text-blue-200/50 text-center font-medium md:opacity-0 md:group-hover:opacity-100 lg:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+            Product by NRTechWorks © 2026
+          </div>
         </div>
       </aside>
     </>

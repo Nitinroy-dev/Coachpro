@@ -485,6 +485,11 @@ export default function Register() {
             </Link>
           </p>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-blue-200/70 text-xs mt-6 font-medium">
+          © {new Date().getFullYear()} CoachPro. Product by NRTechWorks. All rights reserved 2026.
+        </p>
       </div>
     </div>
   )

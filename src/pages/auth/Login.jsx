@@ -182,8 +182,8 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-blue-200 text-xs mt-6">
-          © {new Date().getFullYear()} CoachPro. All rights reserved.
+        <p className="text-center text-blue-200/70 text-xs mt-6 font-medium">
+          © {new Date().getFullYear()} CoachPro. Product by NRTechWorks. All rights reserved 2026.
         </p>
       </div>
     </div>

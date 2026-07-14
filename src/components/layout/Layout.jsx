@@ -284,6 +284,10 @@ export default function Layout() {
                   <LogOut size={18} />
                   Sign out of Batch Desk
                 </button>
+                
+                <p className="text-[10px] text-gray-400 text-center font-bold tracking-wider uppercase pt-2">
+                  Product by NRTechWorks · All Rights Reserved 2026
+                </p>
               </div>
             </div>
           </div>
