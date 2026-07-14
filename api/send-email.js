@@ -27,8 +27,22 @@ export default async function handler(req, res) {
     from = process.env.SYSTEM_RESEND_SENDER || 'noreply@coachpro.nrtechworks.online';
   }
 
-  if (!apiKey || !from || !to || !subject || !html) {
-    return res.status(400).json({ error: 'Missing required parameters (apiKey, from, to, subject, html)' });
+  // Defensive fallback: If email configuration is missing, log to console instead of throwing error
+  if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || !from || from === 'undefined' || from === 'null') {
+    console.warn('--- EMAIL LOG FALLBACK ---');
+    console.warn(`To: ${to}`);
+    console.warn(`Subject: ${subject}`);
+    console.warn(`Content: ${html}`);
+    console.warn('--------------------------');
+    return res.status(200).json({ 
+      success: true, 
+      warning: 'Email logged to server console because Resend API key or Sender email is not configured.',
+      id: 'log-fallback'
+    });
+  }
+
+  if (!to || !subject || !html) {
+    return res.status(400).json({ error: 'Missing required parameters (to, subject, html)' });
   }
 
   try {

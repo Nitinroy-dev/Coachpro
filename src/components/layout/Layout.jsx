@@ -61,6 +61,8 @@ export default function Layout() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          apiKey: institute?.settings?.resend_api_key || null,
+          from: institute?.settings?.resend_sender_email || null,
           to: 'contact@nrtechworks.online',
           subject: `[CoachPro Bug Report] ${bugForm.category}: ${bugForm.title}`,
           html: emailHtml
