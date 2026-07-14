@@ -52,7 +52,7 @@ export default function Login() {
       }
 
       await refreshProfile()
-      const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@coachpro.com'
+      const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
       if (email.trim().toLowerCase() === superadminEmail.toLowerCase()) {
         navigate('/superadmin')
       } else {

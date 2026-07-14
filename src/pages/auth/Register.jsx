@@ -84,7 +84,7 @@ export default function Register() {
 
       // Block registration of Super Admin email via the public signup form
       const cleanEmail = form.email.trim().toLowerCase()
-      const superadminEmail = (import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@coachpro.com').toLowerCase()
+      const superadminEmail = (import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com').toLowerCase()
       if (cleanEmail === superadminEmail) {
         throw new Error('Registration is disabled for the Super Admin email. Please seed this account directly in your Supabase Auth dashboard.')
       }

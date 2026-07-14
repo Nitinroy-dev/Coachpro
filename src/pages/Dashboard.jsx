@@ -30,7 +30,7 @@ export default function Dashboard() {
   const instituteId = profile?.institute_id
   const isStaff = profile?.role === 'staff'
 
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@coachpro.com'
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   useEffect(() => {

@@ -10,7 +10,7 @@ export default function Sidebar({ open = true, onClose }) {
   const { user, profile, institute, signOut, showInstallBtn, handleInstall } = useAuth()
   const navigate = useNavigate()
 
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   const isStudent = profile?.role === 'student'

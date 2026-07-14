@@ -15,7 +15,7 @@ import { Building2, ShieldCheck, RefreshCw, Eye, CheckCircle, Clock, AlertOctago
 
 export default function SuperAdmin() {
   const { user } = useAuth()
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   const [activeTab, setActiveTab] = useState('institutes') // institutes | payments | coupons | revenue

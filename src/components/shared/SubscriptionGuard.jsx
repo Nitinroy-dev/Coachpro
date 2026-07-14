@@ -10,7 +10,7 @@ export default function SubscriptionGuard({ children }) {
   const [checking, setChecking] = useState(true)
   const [redirectExpired, setRedirectExpired] = useState(false)
 
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   useEffect(() => {

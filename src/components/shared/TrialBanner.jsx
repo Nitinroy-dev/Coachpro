@@ -5,7 +5,7 @@ import { AlertTriangle, Sparkles, Lock } from 'lucide-react'
 export default function TrialBanner() {
   const { user, institute } = useAuth()
   const supportPhone = import.meta.env.VITE_SUPPORT_WHATSAPP_NUMBER || '919876543210'
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   const status = institute?.subscription_status

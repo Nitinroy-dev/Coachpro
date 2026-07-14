@@ -93,7 +93,7 @@ export default function Layout() {
     }
   }, [inAppNotifs.length])
 
-  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
+  const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
 
   const isStudent = profile?.role === 'student'

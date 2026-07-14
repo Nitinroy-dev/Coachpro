@@ -267,7 +267,7 @@ export default function Billing() {
       if (insertErr) throw insertErr
 
       // Send alert to superadmin
-      const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@batchdesk.com'
+      const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
       toast.success('UPI Payment submitted! Our team will verify and activate your subscription within 2-4 hours.')
       fetchPaymentHistory()
     } catch (err) {
