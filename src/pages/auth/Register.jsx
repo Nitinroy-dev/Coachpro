@@ -82,6 +82,13 @@ export default function Register() {
       // Clear any existing active session first to avoid session conflicts
       await supabase.auth.signOut()
 
+      // Block registration of Super Admin email via the public signup form
+      const cleanEmail = form.email.trim().toLowerCase()
+      const superadminEmail = (import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@coachpro.com').toLowerCase()
+      if (cleanEmail === superadminEmail) {
+        throw new Error('Registration is disabled for the Super Admin email. Please seed this account directly in your Supabase Auth dashboard.')
+      }
+
       // 1. Create auth user with metadata for DB trigger
       const metadata = {
         name: form.name.trim(),
