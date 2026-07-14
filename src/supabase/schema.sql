@@ -177,6 +177,7 @@ CREATE TABLE IF NOT EXISTS class_events (
   syllabus TEXT,
   total_marks INTEGER,
   reason TEXT,
+  notes TEXT,
   description TEXT,
   notify_students BOOLEAN DEFAULT true,
   notification_sent BOOLEAN DEFAULT false,
