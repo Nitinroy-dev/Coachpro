@@ -187,8 +187,8 @@ export default function Dashboard() {
       let todayAttendanceQuery = supabase.from('attendance').select('status').eq('institute_id', instituteId).eq('date', todayStr)
       let newEnrollmentsQuery = supabase.from('students').select('id').eq('institute_id', instituteId).gte('enrolled_at', startOfMonth)
       let overdueQuery = supabase.from('fee_installments').select('id').eq('institute_id', instituteId).eq('status', 'overdue')
-      let timetableQuery = supabase.from('class_schedule').select('*, batches(name)').eq('institute_id', instituteId).eq('day_of_week', dayOfWeek).eq('is_active', true)
-      let classEventsTodayQuery = supabase.from('class_events').select('*, batches(name)').eq('institute_id', instituteId).eq('event_date', todayStr)
+      let timetableQuery = supabase.from('class_schedule').select('*, batches(name), users:teacher_id(name)').eq('institute_id', instituteId).eq('day_of_week', dayOfWeek).eq('is_active', true)
+      let classEventsTodayQuery = supabase.from('class_events').select('*, batches(name, users:teacher_id(name))').eq('institute_id', instituteId).eq('event_date', todayStr)
       let upcomingExamsQuery = supabase.from('class_events').select('*, batches(name)').eq('institute_id', instituteId).eq('event_type', 'exam').gte('event_date', todayStr).lte('event_date', next7DaysStr)
       let feeHistoryQuery = supabase.from('fee_installments').select('paid_amount, paid_date').eq('institute_id', instituteId).not('paid_date', 'is', null).gte('paid_date', last6MonthsStr)
       let attendanceHistoryQuery = supabase.from('attendance').select('date, status').eq('institute_id', instituteId).gte('date', last30DaysStr)
@@ -324,6 +324,7 @@ export default function Dashboard() {
           timing: `${t.start_time?.slice(0, 5)} - ${t.end_time?.slice(0, 5)}`,
           isCancelled: !!cancelledEvent,
           isExtra: false,
+          teacherName: t.users?.name || 'Unassigned',
         }
       })
 
@@ -335,6 +336,7 @@ export default function Dashboard() {
           timing: e.new_time || 'Extra Time',
           isCancelled: false,
           isExtra: true,
+          teacherName: e.users?.name || e.batches?.users?.name || 'Unassigned',
         })
       })
 
@@ -873,7 +875,7 @@ export default function Dashboard() {
                           <p className={`font-semibold ${c.isCancelled ? 'line-through text-red-600' : ''}`}>
                             {c.subject}
                           </p>
-                          <p className="text-xs opacity-75">{c.batchName}</p>
+                          <p className="text-xs opacity-75">{c.batchName} · {c.teacherName}</p>
                         </div>
                       </div>
 
