@@ -45,6 +45,8 @@ export default function SuperAdmin() {
     max_uses: '100',
   })
 
+  const [dbSizeBytes, setDbSizeBytes] = useState(0)
+
   useEffect(() => {
     if (isSuperAdmin) {
       fetchSuperadminData()
@@ -69,6 +71,15 @@ export default function SuperAdmin() {
       setInstitutes(filteredInsts)
       setPayments(payRes.data || [])
       setCoupons(coupRes.data || [])
+
+      try {
+        const { data: dbSizeData } = await supabase.rpc('get_db_size')
+        if (dbSizeData !== undefined && dbSizeData !== null) {
+          setDbSizeBytes(Number(dbSizeData))
+        }
+      } catch (dbErr) {
+        console.warn('Could not query get_db_size RPC:', dbErr.message)
+      }
     } catch (err) {
       console.error('Superadmin fetch error:', err)
     } finally {
@@ -351,6 +362,13 @@ export default function SuperAdmin() {
   const proCount = institutes.filter(i => i.plan === 'pro').length
   const enterpriseCount = institutes.filter(i => i.plan === 'enterprise').length
 
+  // DB Size calculations
+  const dbSizeMB = dbSizeBytes / (1024 * 1024)
+  const dbSizeFormatted = dbSizeMB < 1 
+    ? `${(dbSizeBytes / 1024).toFixed(1)} KB` 
+    : `${dbSizeMB.toFixed(2)} MB`
+  const dbPercentage = (dbSizeMB / 500) * 100
+
   return (
     <div className="space-y-6">
       {/* Superadmin Banner Header */}
@@ -568,6 +586,33 @@ export default function SuperAdmin() {
               <span className="text-[10px] text-gray-500 block mt-1">Institutes registered</span>
             </Card>
           </div>
+
+          {/* Database Disk Space Progress Widget */}
+          <Card className="p-5 rounded-3xl border border-gray-100 bg-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3 mb-3">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider text-[10px]">Database Disk Storage Space</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Supabase project allocation (500 MB limit)</p>
+              </div>
+              <div className="text-right sm:text-right">
+                <span className="text-sm font-extrabold text-gray-900">{dbSizeFormatted}</span>
+                <span className="text-xs text-gray-500 font-medium"> / 500.0 MB</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="w-full bg-gray-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-gray-200/50">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${dbPercentage > 85 ? 'bg-red-500' : dbPercentage > 60 ? 'bg-orange-500' : 'bg-[#1E3A8A]'}`} 
+                  style={{ width: `${Math.min(dbPercentage, 100)}%` }} 
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400 font-bold">
+                <span>0 MB</span>
+                <span className={dbPercentage > 85 ? 'text-red-500' : dbPercentage > 60 ? 'text-orange-500' : 'text-[#1E3A8A]'}>{dbPercentage.toFixed(1)}% Capacity Used</span>
+                <span>500 MB</span>
+              </div>
+            </div>
+          </Card>
 
           {/* Operational Breakdowns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
