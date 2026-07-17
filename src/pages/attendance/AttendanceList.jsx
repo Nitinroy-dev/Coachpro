@@ -41,14 +41,30 @@ export default function AttendanceList() {
 
   const fetchOptions = async () => {
     const isStaff = profile?.role === 'staff'
-    const batchQuery = supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId)
+    let batchQuery = supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId)
+    let studentQuery = supabase.from('students').select('id, name, student_code, batch_id').eq('institute_id', instituteId).eq('status', 'active')
+
     if (isStaff) {
-      batchQuery.eq('teacher_id', profile.id)
+      const { data: myBatches } = await supabase
+        .from('batches')
+        .select('id')
+        .eq('teacher_id', profile.id)
+
+      const myBatchIds = (myBatches || []).map(b => b.id)
+
+      if (myBatchIds.length === 0) {
+        setBatches([])
+        setStudents([])
+        return
+      }
+
+      batchQuery = batchQuery.eq('teacher_id', profile.id)
+      studentQuery = studentQuery.in('batch_id', myBatchIds)
     }
 
     const [bRes, sRes] = await Promise.all([
       batchQuery.order('name'),
-      supabase.from('students').select('id, name, student_code, batch_id').eq('institute_id', instituteId).eq('status', 'active').order('name')
+      studentQuery.order('name')
     ])
     const bList = bRes.data || []
     const sList = sRes.data || []
@@ -62,14 +78,31 @@ export default function AttendanceList() {
   const fetchAttendanceData = async () => {
     setLoading(true)
     try {
+      const isStaff = profile?.role === 'staff'
       let query = supabase.from('attendance').select('*, students(name, student_code, phone), batches(name)').eq('institute_id', instituteId)
+
+      if (isStaff) {
+        const { data: myBatches } = await supabase
+          .from('batches')
+          .select('id')
+          .eq('teacher_id', profile.id)
+
+        const myBatchIds = (myBatches || []).map(b => b.id)
+
+        if (myBatchIds.length === 0) {
+          setAttendanceData([])
+          setLoading(false)
+          return
+        }
+
+        query = query.in('batch_id', myBatchIds)
+      }
 
       if (activeReportTab === 'daily') {
         query = query.eq('date', selectedDailyDate)
       } else if (activeReportTab === 'student') {
         if (selectedStudent) query = query.eq('student_id', selectedStudent)
       }
-      // Note: For batch performance analytics, we query all attendance records for the institute to match properly
 
       const { data } = await query.order('date', { ascending: false })
       setAttendanceData(data || [])
