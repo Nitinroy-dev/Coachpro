@@ -74,6 +74,14 @@ export default function StudentDetail() {
       ])
 
       const st = studRes.data
+      if (isStaff && st) {
+        if (!st.batch_id || st.batches?.teacher_id !== profile?.id) {
+          toast.error('You do not have permission to view this student.')
+          navigate('/students')
+          return
+        }
+      }
+
       setStudent(st)
       setInstallments(instRes.data || [])
       setAttendance(attRes.data || [])

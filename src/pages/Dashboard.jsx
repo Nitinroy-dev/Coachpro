@@ -171,6 +171,7 @@ export default function Dashboard() {
   const fetchComprehensiveDashboardData = async () => {
     setLoading(true)
     try {
+      const isStaff = profile?.role === 'staff'
       const now = new Date()
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
       const todayStr = now.toISOString().split('T')[0]
@@ -178,6 +179,76 @@ export default function Dashboard() {
       const last30DaysStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       const last6MonthsStr = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       const next7DaysStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+      let studentsQuery = supabase.from('students').select('id, batch_id, batches(name)').eq('institute_id', instituteId).eq('status', 'active')
+      let batchesQuery = supabase.from('batches').select('id, name').eq('institute_id', instituteId)
+      let thisMonthFeesQuery = supabase.from('fee_installments').select('paid_amount, paid_date').eq('institute_id', instituteId).not('paid_date', 'is', null).gte('paid_date', startOfMonth.split('T')[0])
+      let pendingFeesQuery = supabase.from('fee_installments').select('amount, paid_amount').eq('institute_id', instituteId).in('status', ['pending', 'overdue', 'partial'])
+      let todayAttendanceQuery = supabase.from('attendance').select('status').eq('institute_id', instituteId).eq('date', todayStr)
+      let newEnrollmentsQuery = supabase.from('students').select('id').eq('institute_id', instituteId).gte('enrolled_at', startOfMonth)
+      let overdueQuery = supabase.from('fee_installments').select('id').eq('institute_id', instituteId).eq('status', 'overdue')
+      let timetableQuery = supabase.from('class_schedule').select('*, batches(name)').eq('institute_id', instituteId).eq('day_of_week', dayOfWeek).eq('is_active', true)
+      let classEventsTodayQuery = supabase.from('class_events').select('*, batches(name)').eq('institute_id', instituteId).eq('event_date', todayStr)
+      let upcomingExamsQuery = supabase.from('class_events').select('*, batches(name)').eq('institute_id', instituteId).eq('event_type', 'exam').gte('event_date', todayStr).lte('event_date', next7DaysStr)
+      let feeHistoryQuery = supabase.from('fee_installments').select('paid_amount, paid_date').eq('institute_id', instituteId).not('paid_date', 'is', null).gte('paid_date', last6MonthsStr)
+      let attendanceHistoryQuery = supabase.from('attendance').select('date, status').eq('institute_id', instituteId).gte('date', last30DaysStr)
+      let notificationsQuery = supabase.from('notifications').select('*, students(name)').eq('institute_id', instituteId).order('created_at', { ascending: false }).limit(10)
+
+      if (isStaff) {
+        // Fetch batches assigned to this teacher
+        const { data: myBatches } = await supabase
+          .from('batches')
+          .select('id')
+          .eq('teacher_id', profile.id)
+
+        const myBatchIds = (myBatches || []).map(b => b.id)
+
+        if (myBatchIds.length === 0) {
+          // No batches, set stats to zero and return empty arrays
+          setDashStats({
+            activeStudents: 0,
+            totalBatches: 0,
+            monthRevenue: 0,
+            pendingFees: 0,
+            todayAttendancePct: 100,
+            monthEnrollments: 0,
+            overdueCount: 0,
+            classesTodayCount: 0,
+          })
+          setTodayClasses([])
+          setUpcomingExams([])
+          setNotifications([])
+          setLoading(false)
+          return
+        }
+
+        studentsQuery = studentsQuery.in('batch_id', myBatchIds)
+        batchesQuery = batchesQuery.eq('teacher_id', profile.id)
+        timetableQuery = timetableQuery.in('batch_id', myBatchIds)
+        classEventsTodayQuery = classEventsTodayQuery.in('batch_id', myBatchIds)
+        upcomingExamsQuery = upcomingExamsQuery.in('batch_id', myBatchIds)
+        attendanceHistoryQuery = attendanceHistoryQuery.in('batch_id', myBatchIds)
+        todayAttendanceQuery = todayAttendanceQuery.in('batch_id', myBatchIds)
+
+        // For staff notifications, fetch student IDs in their batches
+        const { data: tempStudents } = await supabase
+          .from('students')
+          .select('id')
+          .in('batch_id', myBatchIds)
+        const myStudentIds = (tempStudents || []).map(s => s.id)
+        if (myStudentIds.length > 0) {
+          notificationsQuery = notificationsQuery.in('student_id', myStudentIds)
+        } else {
+          notificationsQuery = notificationsQuery.eq('student_id', '00000000-0000-0000-0000-000000000000')
+        }
+
+        // Hide billing related info for staff queries entirely to be secure
+        thisMonthFeesQuery = thisMonthFeesQuery.eq('student_id', '00000000-0000-0000-0000-000000000000')
+        pendingFeesQuery = pendingFeesQuery.eq('student_id', '00000000-0000-0000-0000-000000000000')
+        newEnrollmentsQuery = newEnrollmentsQuery.in('batch_id', myBatchIds)
+        overdueQuery = overdueQuery.eq('student_id', '00000000-0000-0000-0000-000000000000')
+        feeHistoryQuery = feeHistoryQuery.eq('student_id', '00000000-0000-0000-0000-000000000000')
+      }
 
       // Parallel queries
       const [
@@ -195,19 +266,19 @@ export default function Dashboard() {
         attendanceHistoryRes,
         notificationsRes
       ] = await Promise.all([
-        supabase.from('students').select('id, batch_id, batches(name)').eq('institute_id', instituteId).eq('status', 'active'),
-        supabase.from('batches').select('id, name').eq('institute_id', instituteId),
-        supabase.from('fee_installments').select('paid_amount, paid_date').eq('institute_id', instituteId).not('paid_date', 'is', null).gte('paid_date', startOfMonth.split('T')[0]),
-        supabase.from('fee_installments').select('amount, paid_amount').eq('institute_id', instituteId).in('status', ['pending', 'overdue', 'partial']),
-        supabase.from('attendance').select('status').eq('institute_id', instituteId).eq('date', todayStr),
-        supabase.from('students').select('id').eq('institute_id', instituteId).gte('enrolled_at', startOfMonth),
-        supabase.from('fee_installments').select('id').eq('institute_id', instituteId).eq('status', 'overdue'),
-        supabase.from('class_schedule').select('*, batches(name)').eq('institute_id', instituteId).eq('day_of_week', dayOfWeek).eq('is_active', true),
-        supabase.from('class_events').select('*, batches(name)').eq('institute_id', instituteId).eq('event_date', todayStr),
-        supabase.from('class_events').select('*, batches(name)').eq('institute_id', instituteId).eq('event_type', 'exam').gte('event_date', todayStr).lte('event_date', next7DaysStr),
-        supabase.from('fee_installments').select('paid_amount, paid_date').eq('institute_id', instituteId).not('paid_date', 'is', null).gte('paid_date', last6MonthsStr),
-        supabase.from('attendance').select('date, status').eq('institute_id', instituteId).gte('date', last30DaysStr),
-        supabase.from('notifications').select('*, students(name)').eq('institute_id', instituteId).order('created_at', { ascending: false }).limit(10)
+        studentsQuery,
+        batchesQuery,
+        thisMonthFeesQuery,
+        pendingFeesQuery,
+        todayAttendanceQuery,
+        newEnrollmentsQuery,
+        overdueQuery,
+        timetableQuery,
+        classEventsTodayQuery,
+        upcomingExamsQuery,
+        feeHistoryQuery,
+        attendanceHistoryQuery,
+        notificationsQuery
       ])
 
       const activeStudentsList = studentsRes.data || []

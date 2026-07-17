@@ -41,21 +41,59 @@ export default function StudentList() {
   const fetchStudentsAndData = async () => {
     setLoading(true)
     try {
-      const [studRes, batchRes, instRes] = await Promise.all([
-        supabase
-          .from('students')
-          .select('*, batches(name, courses(name))')
-          .eq('institute_id', instituteId)
-          .order('enrolled_at', { ascending: false }),
-        supabase
+      const isStaff = profile?.role === 'staff'
+
+      let studentQuery = supabase
+        .from('students')
+        .select('*, batches(name, courses(name))')
+        .eq('institute_id', instituteId)
+
+      let batchQuery = supabase
+        .from('batches')
+        .select('id, name')
+        .eq('institute_id', instituteId)
+
+      let installmentsQuery = supabase
+        .from('fee_installments')
+        .select('student_id, amount, paid_amount, status')
+        .eq('institute_id', instituteId)
+
+      if (isStaff) {
+        // Fetch batches assigned to this teacher
+        const { data: myBatches } = await supabase
           .from('batches')
-          .select('id, name')
-          .eq('institute_id', instituteId)
-          .order('name'),
-        supabase
-          .from('fee_installments')
-          .select('student_id, amount, paid_amount, status')
-          .eq('institute_id', instituteId)
+          .select('id')
+          .eq('teacher_id', profile.id)
+
+        const myBatchIds = (myBatches || []).map(b => b.id)
+
+        if (myBatchIds.length === 0) {
+          setStudents([])
+          setBatches([])
+          setLoading(false)
+          return
+        }
+
+        studentQuery = studentQuery.in('batch_id', myBatchIds)
+        batchQuery = batchQuery.eq('teacher_id', profile.id)
+
+        // Fetch student IDs to filter installments
+        const { data: tempStudents } = await supabase
+          .from('students')
+          .select('id')
+          .in('batch_id', myBatchIds)
+        const myStudentIds = (tempStudents || []).map(s => s.id)
+        if (myStudentIds.length > 0) {
+          installmentsQuery = installmentsQuery.in('student_id', myStudentIds)
+        } else {
+          installmentsQuery = installmentsQuery.eq('student_id', '00000000-0000-0000-0000-000000000000')
+        }
+      }
+
+      const [studRes, batchRes, instRes] = await Promise.all([
+        studentQuery.order('enrolled_at', { ascending: false }),
+        batchQuery.order('name'),
+        installmentsQuery
       ])
 
       const rawStudents = studRes.data || []

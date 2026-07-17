@@ -90,9 +90,15 @@ export default function StudentCreate() {
 
   const fetchDropdownData = async () => {
     try {
+      const isStaff = profile?.role === 'staff'
+      let batchQuery = supabase.from('batches').select('id, name, course_id').eq('institute_id', instituteId)
+      if (isStaff) {
+        batchQuery = batchQuery.eq('teacher_id', profile.id)
+      }
+
       const [cRes, bRes, fRes] = await Promise.all([
         supabase.from('courses').select('id, name, total_fee').eq('institute_id', instituteId).order('name'),
-        supabase.from('batches').select('id, name, course_id').eq('institute_id', instituteId).order('name'),
+        batchQuery.order('name'),
         supabase.from('fee_structures').select('*').eq('institute_id', instituteId)
       ])
       setCourses(cRes.data || [])
