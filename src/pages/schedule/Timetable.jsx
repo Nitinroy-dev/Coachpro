@@ -55,7 +55,12 @@ export default function Timetable() {
   }, [selectedBatch])
 
   const fetchBatches = async () => {
-    const { data } = await supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId).order('name')
+    const isStaff = profile?.role === 'staff'
+    let query = supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId)
+    if (isStaff) {
+      query = query.eq('teacher_id', profile.id)
+    }
+    const { data } = await query.order('name')
     setBatches(data || [])
     if (data && data.length > 0 && !selectedBatch) setSelectedBatch(data[0].id)
   }
@@ -83,13 +88,14 @@ export default function Timetable() {
   }
 
   const handleOpenAdd = (dayNum = 1) => {
+    const isStaff = profile?.role === 'staff'
     setEditingSlot(null)
     setSlotForm({
       day_of_week: String(dayNum),
       start_time: '09:00',
       end_time: '10:00',
       subject: '',
-      teacher_id: teachers[0]?.id || '',
+      teacher_id: isStaff ? profile.id : (teachers[0]?.id || ''),
     })
     setShowSlotModal(true)
   }
@@ -110,6 +116,7 @@ export default function Timetable() {
     e.preventDefault()
     if (!slotForm.subject.trim() || !selectedBatch) return
     try {
+      const isStaff = profile?.role === 'staff'
       const payload = {
         institute_id: instituteId,
         batch_id: selectedBatch,
@@ -117,7 +124,7 @@ export default function Timetable() {
         start_time: slotForm.start_time,
         end_time: slotForm.end_time,
         subject: slotForm.subject.trim(),
-        teacher_id: slotForm.teacher_id || null,
+        teacher_id: isStaff ? profile.id : (slotForm.teacher_id || null),
         is_active: true,
       }
 
@@ -349,12 +356,14 @@ export default function Timetable() {
               <Input label="End Time *" type="time" value={slotForm.end_time} onChange={(e) => setSlotForm({ ...slotForm, end_time: e.target.value })} required />
             </div>
             <Input label="Subject Name *" placeholder="e.g. Physics" value={slotForm.subject} onChange={(e) => setSlotForm({ ...slotForm, subject: e.target.value })} required />
-            <Select
-              label="Assign Teacher (Staff)"
-              value={slotForm.teacher_id}
-              onChange={(e) => setSlotForm({ ...slotForm, teacher_id: e.target.value })}
-              options={[{ value: '', label: 'Unassigned' }, ...teachers.map(t => ({ value: t.id, label: t.name || 'Staff User' }))]}
-            />
+            {profile?.role !== 'staff' && (
+              <Select
+                label="Assign Teacher (Staff)"
+                value={slotForm.teacher_id}
+                onChange={(e) => setSlotForm({ ...slotForm, teacher_id: e.target.value })}
+                options={[{ value: '', label: 'Unassigned' }, ...teachers.map(t => ({ value: t.id, label: t.name || 'Staff User' }))]}
+              />
+            )}
           </form>
         </Modal>
       )}
