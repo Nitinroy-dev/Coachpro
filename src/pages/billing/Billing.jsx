@@ -256,10 +256,9 @@ export default function Billing() {
     doc.text('Batch Desk', 15, 18)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    doc.text('TAX INVOICE', 15, 28)
+    doc.text('PAYMENT RECEIPT', 15, 28)
 
-    doc.text('Batch Desk Technologies Pvt Ltd', pageWidth - 15, 18, { align: 'right' })
-    doc.text('GSTIN: 27AAAAA0000A1Z5', pageWidth - 15, 25, { align: 'right' })
+    doc.text('Batch Desk', pageWidth - 15, 18, { align: 'right' })
 
     // Billed From / Company Details
     doc.setTextColor(100, 116, 139)
@@ -267,9 +266,8 @@ export default function Billing() {
     doc.setFont('helvetica', 'bold')
     doc.text('Seller Details:', 15, 48)
     doc.setFont('helvetica', 'normal')
-    doc.text('Batch Desk Technologies Pvt Ltd', 15, 53)
+    doc.text('Batch Desk', 15, 53)
     doc.text('Email: support@batchdesk.com', 15, 58)
-    doc.text('GSTIN: 27AAAAA0000A1Z5', 15, 63)
 
     // Billed To / Client Details
     doc.setFont('helvetica', 'bold')
@@ -293,21 +291,20 @@ export default function Billing() {
     doc.text(`Payment Method: ${p.method?.toUpperCase() || 'Razorpay'}`, 120, 78)
     doc.text(`Transaction ID: ${p.razorpay_payment_id || p.utr_number || 'N/A'}`, 120, 83)
 
-    const baseCost = Number(p.amount) || 0
-    const gstCost = Number(p.gst_amount) || 0
     const totalCost = Number(p.total_amount) || 0
     const discountAmt = Number(p.discount_amount) || 0
 
     const tableBody = [
-      [`Batch Desk Subscription (${p.plan?.toUpperCase()} Plan)`, p.billing_cycle || 'monthly', `Rs. ${baseCost.toFixed(2)}`],
+      [`Batch Desk Subscription (${p.plan?.toUpperCase()} Plan)`, p.billing_cycle || 'monthly', `Rs. ${totalCost.toFixed(2)}`],
     ]
 
     if (discountAmt > 0) {
+      const originalCost = totalCost + discountAmt
+      tableBody[0] = [`Batch Desk Subscription (${p.plan?.toUpperCase()} Plan)`, p.billing_cycle || 'monthly', `Rs. ${originalCost.toFixed(2)}`]
       tableBody.push([`Promo Discount (${p.coupon_code || 'Applied'})`, 'Discount', `-Rs. ${discountAmt.toFixed(2)}`])
     }
 
     tableBody.push(
-      ['GST (18% inclusive)', 'Tax', `Rs. ${gstCost.toFixed(2)}`],
       ['Total Paid Amount', 'Final', `Rs. ${totalCost.toFixed(2)}`]
     )
 
@@ -632,13 +629,13 @@ export default function Billing() {
 
       {/* SECTION 3: PAYMENT HISTORY TABLE */}
       <Card>
-        <CardHeader><CardTitle>Payment & Invoice History</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Payment & Receipt History</CardTitle></CardHeader>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="bg-gray-50 text-gray-500 uppercase text-[11px] font-bold border-b border-gray-100">
                 <th className="p-3.5">Date</th>
-                <th className="p-3.5">Invoice #</th>
+                <th className="p-3.5">Receipt #</th>
                 <th className="p-3.5">Plan</th>
                 <th className="p-3.5">Total Paid</th>
                 <th className="p-3.5">Method</th>
@@ -658,7 +655,7 @@ export default function Billing() {
                   <td className="p-3.5 uppercase text-[10px] font-bold text-gray-600">{p.method}</td>
                   <td className="p-3.5"><StatusBadge status={p.status} /></td>
                   <td className="p-3.5 text-right">
-                    <Button size="xs" variant="ghost" icon={Download} onClick={() => downloadInvoicePDF(p)}>Invoice</Button>
+                    <Button size="xs" variant="ghost" icon={Download} onClick={() => downloadInvoicePDF(p)}>Receipt</Button>
                   </td>
                 </tr>
               ))}
