@@ -594,6 +594,27 @@ export default function Billing() {
                 <p className={`text-xs font-bold ${couponMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>{couponMsg.text}</p>
               )}
             </div>
+
+            {/* Warning if current usage exceeds selected plan limit */}
+            {usage && (
+              (() => {
+                const numericLimit = selectedPlan === 'starter' ? 150 : selectedPlan === 'growth' ? 400 : selectedPlan === 'pro' ? 1000 : 999999
+                const isExceeded = usage.students > numericLimit
+                if (isExceeded) {
+                  return (
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 text-amber-800 text-xs">
+                      <AlertTriangle size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold mb-1">⚠️ Plan Limit Exceeded Notice</p>
+                        <p>You have <strong>{usage.students} active students</strong>, which exceeds the <strong>{numericLimit} students</strong> limit of the <strong>{selectedPlan.toUpperCase()}</strong> plan.</p>
+                        <p className="mt-1">You can renew under this plan, but you won't be able to add any new students until you upgrade or archive/delete existing student accounts.</p>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              })()
+            )}
           </Card>
 
           {/* Plan Summary Box */}
