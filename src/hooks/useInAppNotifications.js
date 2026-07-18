@@ -27,6 +27,57 @@ export function playNotificationSound() {
 }
 
 /**
+ * Request OS notification permission from the user (once).
+ * Should be called after a user gesture for best browser compatibility.
+ */
+export async function requestNotificationPermission() {
+  if (!('Notification' in window)) return 'unsupported'
+  if (Notification.permission === 'granted') return 'granted'
+  if (Notification.permission === 'denied') return 'denied'
+  try {
+    const result = await Notification.requestPermission()
+    return result
+  } catch (e) {
+    console.warn('Notification permission error:', e)
+    return 'error'
+  }
+}
+
+/**
+ * Fire a native OS / phone-panel notification.
+ * Uses ServiceWorker showNotification if available (works in PWA on Android),
+ * otherwise falls back to the plain Notification API.
+ */
+async function fireNativeNotification(title, body, url = '/dashboard') {
+  if (!('Notification' in window)) return
+  if (Notification.permission !== 'granted') return
+
+  try {
+    // Prefer service worker notification (shows in Android notification shade for PWA)
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready
+      await reg.showNotification(title, {
+        body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-96.png',
+        tag: `batchdesk-notif-${Date.now()}`,
+        renotify: true,
+        data: { url },
+        vibrate: [200, 100, 200],
+      })
+    } else {
+      // Fallback for browsers without service worker
+      new Notification(title, {
+        body,
+        icon: '/icons/icon-192.png',
+      })
+    }
+  } catch (e) {
+    console.warn('Native notification error:', e)
+  }
+}
+
+/**
  * Hook: subscribes to Supabase Realtime for new in-app notifications.
  * Plays a chime on new inserts and tracks unread count.
  */
@@ -35,6 +86,11 @@ export function useInAppNotifications() {
   const [inAppNotifs, setInAppNotifs] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const channelRef = useRef(null)
+
+  // Request OS notification permission once on mount
+  useEffect(() => {
+    requestNotificationPermission()
+  }, [])
 
   const [studentId, setStudentId] = useState(profile?.role === 'student' ? profile?.id : null)
   const [myBatchStudentIds, setMyBatchStudentIds] = useState([])
@@ -160,12 +216,14 @@ export function useInAppNotifications() {
             setInAppNotifs((prev) => [cleanNotif, ...prev])
             setUnreadCount((prev) => prev + 1)
             playNotificationSound()
+            fireNativeNotification('Batch Desk', cleanMessage.slice(0, 120), '/notifications')
             return
           }
 
           setInAppNotifs((prev) => [n, ...prev])
           setUnreadCount((prev) => prev + 1)
           playNotificationSound()
+          fireNativeNotification('Batch Desk', (n.message || 'New notification').slice(0, 120), '/notifications')
         }
       )
       .subscribe()
