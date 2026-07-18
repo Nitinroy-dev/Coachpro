@@ -25,6 +25,7 @@ export default function FeeList() {
   const toast = useToast()
   const navigate = useNavigate()
   const instituteId = profile?.institute_id
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner'
 
   const [activeTab, setActiveTab] = useState('transactions') // transactions | pending | partial | reports
   const [loading, setLoading] = useState(false)
@@ -281,7 +282,7 @@ export default function FeeList() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <CardTitle>Recent Payment Transactions</CardTitle>
-            <Button size="xs" variant="outline" icon={Upload} onClick={exportRecentTransactionsCSV} className="bg-white">Export CSV</Button>
+            {isAdmin && <Button size="xs" variant="outline" icon={Upload} onClick={exportRecentTransactionsCSV} className="bg-white">Export CSV</Button>}
           </CardHeader>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
@@ -445,7 +446,7 @@ export default function FeeList() {
                 <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="text-xs" />
                 <span className="text-xs text-gray-400">to</span>
                 <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="text-xs" />
-                <Button size="sm" variant="outline" icon={Upload} onClick={exportCollectionReportCSV} className="bg-white">Export CSV</Button>
+                {isAdmin && <Button size="sm" variant="outline" icon={Upload} onClick={exportCollectionReportCSV} className="bg-white">Export CSV</Button>}
               </div>
             </div>
             <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-100 text-xs font-bold text-[#1E3A8A] flex items-center justify-between">
@@ -461,7 +462,7 @@ export default function FeeList() {
                 <h3 className="font-bold text-gray-900 text-base">Outstanding Dues Report</h3>
                 <p className="text-xs text-gray-500">List of all active students with pending balance</p>
               </div>
-              <Button size="sm" variant="outline" icon={Upload} onClick={exportOutstandingReportCSV} className="bg-white">Export CSV</Button>
+              {isAdmin && <Button size="sm" variant="outline" icon={Upload} onClick={exportOutstandingReportCSV} className="bg-white">Export CSV</Button>}
             </div>
           </Card>
 

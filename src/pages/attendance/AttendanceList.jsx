@@ -15,6 +15,7 @@ export default function AttendanceList() {
   const { profile } = useAuth()
   const instituteId = profile?.institute_id
   const isStaff = profile?.role === 'staff'
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner'
   const navigate = useNavigate()
 
   const [activeReportTab, setActiveReportTab] = useState('batch') // batch | student | daily
@@ -258,7 +259,7 @@ export default function AttendanceList() {
                 options={batches.map(b => ({ value: b.id, label: `${b.name} (${b.courses?.name || 'Course'})` }))}
               />
             </div>
-            {!isStaff && (
+            {isAdmin && (
               <Button size="sm" variant="outline" icon={Upload} onClick={exportBatchReportCSV} className="bg-white">
                 Export CSV Report
               </Button>

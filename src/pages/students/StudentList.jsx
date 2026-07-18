@@ -16,6 +16,7 @@ import { TableRowSkeleton } from '../../components/ui/Skeleton'
 export default function StudentList() {
   const { profile } = useAuth()
   const isStaff = profile?.role === 'staff'
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner'
   const navigate = useNavigate()
   const instituteId = profile?.institute_id
 
@@ -284,7 +285,7 @@ export default function StudentList() {
           <p className="text-sm text-gray-500">{students.length} students enrolled across all batches</p>
         </div>
         <div className="flex items-center gap-2">
-          {!isStaff && (
+          {isAdmin && (
             <Button
               variant="outline"
               icon={Upload}

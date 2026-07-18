@@ -436,6 +436,7 @@ export default function NotificationCenter() {
 
   const isStudent = profile?.role === 'student'
   const isStaff = profile?.role === 'staff'
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner'
 
   if (isStudent || isParent || isStaff) {
     if (isParent && !parentStudentId) {
@@ -775,7 +776,7 @@ export default function NotificationCenter() {
 
           <div className="flex items-center gap-2">
             <Button size="xs" variant="outline" icon={Trash2} onClick={clearLogs} className="text-red-600 hover:text-red-700 bg-white">Clear History</Button>
-            <Button size="xs" variant="outline" icon={Download} onClick={exportCSV} className="bg-white" disabled={filteredNotifications.length === 0}>Export CSV</Button>
+            {isAdmin && <Button size="xs" variant="outline" icon={Download} onClick={exportCSV} className="bg-white" disabled={filteredNotifications.length === 0}>Export CSV</Button>}
           </div>
         </div>
 
