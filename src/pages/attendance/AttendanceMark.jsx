@@ -84,7 +84,7 @@ export default function AttendanceMark() {
         setIsExisting(false)
         // Default present unless cancelled class event
         studList.forEach(s => {
-          initialMap[s.id] = cancelled ? 'holiday' : 'present'
+          initialMap[s.id] = cancelled ? 'cancelled' : 'present'
         })
       }
       setAttendance(initialMap)
@@ -188,8 +188,8 @@ export default function AttendanceMark() {
               </span>
             </div>
             {classEvent.event_type === 'cancelled' && (
-              <Button size="xs" variant="warning" onClick={() => handleMarkAll('holiday')}>
-                Mark All Holiday
+              <Button size="xs" variant="warning" onClick={() => handleMarkAll('cancelled')}>
+                Mark All Cancelled
               </Button>
             )}
           </div>
@@ -260,6 +260,16 @@ export default function AttendanceMark() {
                     >
                       <span>🟡</span> Late
                     </button>
+                    {currentStatus === 'holiday' && (
+                      <span className="px-3.5 py-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 min-h-[48px] bg-indigo-100 text-indigo-700 border border-indigo-200">
+                        <span>⚫</span> Holiday
+                      </span>
+                    )}
+                    {currentStatus === 'cancelled' && (
+                      <span className="px-3.5 py-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 min-h-[48px] bg-gray-100 text-gray-500 border border-gray-200">
+                        <span>⚪</span> Cancelled
+                      </span>
+                    )}
                   </div>
                 </Card>
               )
