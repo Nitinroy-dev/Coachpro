@@ -78,18 +78,19 @@ export default function NotificationCenter() {
   }, [profile])
 
   useEffect(() => {
-    if (instituteId) {
+    if (instituteId && profile) {
       if (!isParent || parentChecked) {
         fetchNotifications()
       }
       const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
       const isSuperAdmin = profile?.email && profile.email.toLowerCase() === superadminEmail.toLowerCase()
       const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || isSuperAdmin
-      if (isAdmin) {
+      const isStaff = profile?.role === 'staff'
+      if (isAdmin || isStaff) {
         fetchDropdownData()
       }
     }
-  }, [instituteId, parentStudentId, parentChecked])
+  }, [instituteId, profile?.role, parentStudentId, parentChecked])
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -158,8 +159,18 @@ export default function NotificationCenter() {
   const fetchDropdownData = async () => {
     try {
       const isStaff = profile?.role === 'staff'
-      let studQuery = supabase.from('students').select('id, name, phone, parent_name, parent_phone, student_code, batch_id, batches(name)').eq('institute_id', instituteId).eq('status', 'active')
-      let batchQuery = supabase.from('batches').select('id, name, teacher_id, profiles:teacher_id(full_name)').eq('institute_id', instituteId)
+      let studQuery = supabase
+        .from('students')
+        .select('id, name, phone, parent_name, parent_phone, student_code, batch_id, batches(name)')
+        .eq('institute_id', instituteId)
+        .eq('status', 'active')
+
+      // Simple batches query — no profiles join to avoid potential FK errors
+      let batchQuery = supabase
+        .from('batches')
+        .select('id, name, teacher_id')
+        .eq('institute_id', instituteId)
+        .order('name')
 
       if (isStaff) {
         const { data: myBatches } = await supabase
@@ -181,8 +192,12 @@ export default function NotificationCenter() {
 
       const [studRes, batchRes] = await Promise.all([
         studQuery,
-        batchQuery.order('name')
+        batchQuery
       ])
+
+      if (studRes.error) console.error('Students fetch error:', studRes.error)
+      if (batchRes.error) console.error('Batches fetch error:', batchRes.error)
+
       setStudents(studRes.data || [])
       setBatches(batchRes.data || [])
     } catch (err) {
