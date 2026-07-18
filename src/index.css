@@ -190,7 +190,19 @@ input, select, textarea {
 }
 
 /* Orientation Rotation Lock fallbacks */
-.lock-portrait-rotation {
+.lock-portrait-rotation-90 {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vh !important;
+  height: 100vw !important;
+  transform: rotate(90deg) !important;
+  transform-origin: 0 0 !important;
+  margin-left: 100vw !important;
+  overflow: hidden !important;
+}
+
+.lock-portrait-rotation-270 {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;

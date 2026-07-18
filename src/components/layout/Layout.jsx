@@ -21,17 +21,24 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [isLocked, setIsLocked] = useState(
-    localStorage.getItem('orientation_lock') === 'true'
-  )
-  const [isLandscape, setIsLandscape] = useState(false)
+  const [rotationClass, setRotationClass] = useState('')
 
   useEffect(() => {
     const handleOrientationCheck = () => {
       const locked = localStorage.getItem('orientation_lock') === 'true'
-      setIsLocked(locked)
-      const landscape = window.innerWidth > window.innerHeight && window.innerWidth < 1024
-      setIsLandscape(landscape)
+      const isLandscape = window.innerWidth > window.innerHeight && window.innerWidth < 1024
+      
+      if (locked && isLandscape) {
+        // Detect current landscape rotation angle to align correctly
+        const angle = window.screen?.orientation?.angle ?? window.orientation ?? 90
+        if (angle === -90 || angle === 270) {
+          setRotationClass('lock-portrait-rotation-270')
+        } else {
+          setRotationClass('lock-portrait-rotation-90')
+        }
+      } else {
+        setRotationClass('')
+      }
     }
 
     handleOrientationCheck()
@@ -168,7 +175,7 @@ export default function Layout() {
 
   return (
     <SubscriptionGuard>
-      <div className={isLocked && isLandscape ? "lock-portrait-rotation" : ""}>
+      <div className={rotationClass}>
         <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
 
         {/* In-App Notification Banner */}
