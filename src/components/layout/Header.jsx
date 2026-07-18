@@ -72,6 +72,7 @@ export default function Header({ onMenuToggle }) {
       } catch (e) {}
       document.body.classList.remove('lock-portrait-rotation')
     }
+    window.dispatchEvent(new Event('orientation_lock_change'))
   }
 
   const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'

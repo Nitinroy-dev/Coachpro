@@ -21,6 +21,31 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  const [isLocked, setIsLocked] = useState(
+    localStorage.getItem('orientation_lock') === 'true'
+  )
+  const [isLandscape, setIsLandscape] = useState(false)
+
+  useEffect(() => {
+    const handleOrientationCheck = () => {
+      const locked = localStorage.getItem('orientation_lock') === 'true'
+      setIsLocked(locked)
+      const landscape = window.innerWidth > window.innerHeight && window.innerWidth < 1024
+      setIsLandscape(landscape)
+    }
+
+    handleOrientationCheck()
+    window.addEventListener('resize', handleOrientationCheck)
+    window.addEventListener('orientationchange', handleOrientationCheck)
+    window.addEventListener('orientation_lock_change', handleOrientationCheck)
+
+    return () => {
+      window.removeEventListener('resize', handleOrientationCheck)
+      window.removeEventListener('orientationchange', handleOrientationCheck)
+      window.removeEventListener('orientation_lock_change', handleOrientationCheck)
+    }
+  }, [])
+
   // Bug & Issue Reporting states
   const [showBugModal, setShowBugModal] = useState(false)
   const [bugForm, setBugForm] = useState({ title: '', category: 'Bug/Glitch', description: '' })
@@ -143,7 +168,8 @@ export default function Layout() {
 
   return (
     <SubscriptionGuard>
-      <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
+      <div className={isLocked && isLandscape ? "lock-portrait-rotation" : ""}>
+        <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
 
         {/* In-App Notification Banner */}
         {notifBanner && (
@@ -410,6 +436,7 @@ export default function Layout() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </SubscriptionGuard>
   )
