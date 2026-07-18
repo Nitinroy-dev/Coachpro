@@ -123,33 +123,21 @@ export default function NotificationCenter() {
           setNotifications([])
         }
       } else if (isStaff) {
-        const { data: myBatches } = await supabase
-          .from('batches')
-          .select('id')
-          .eq('teacher_id', profile.id)
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*, students(name, phone, student_code)')
+          .is('student_id', null)
+          .order('created_at', { ascending: false })
+        if (error) throw error
         
-        const myBatchIds = (myBatches || []).map(b => b.id)
-        if (myBatchIds.length > 0) {
-          const { data: bStuds } = await supabase
-            .from('students')
-            .select('id')
-            .in('batch_id', myBatchIds)
-          const myBatchStudentIds = (bStuds || []).map(s => s.id)
-
-          if (myBatchStudentIds.length > 0) {
-            const { data, error } = await supabase
-              .from('notifications')
-              .select('*, students(name, phone, student_code)')
-              .in('student_id', myBatchStudentIds)
-              .order('created_at', { ascending: false })
-            if (error) throw error
-            setNotifications(data || [])
-          } else {
-            setNotifications([])
-          }
-        } else {
-          setNotifications([])
-        }
+        const prefix = `[Teacher:${profile.id}]`
+        const filtered = (data || [])
+          .filter(n => n.message && n.message.startsWith(prefix))
+          .map(n => ({
+            ...n,
+            message: n.message.substring(prefix.length).trim()
+          }))
+        setNotifications(filtered)
       } else {
         const { data, error } = await supabase
           .from('notifications')
@@ -171,7 +159,7 @@ export default function NotificationCenter() {
     try {
       const isStaff = profile?.role === 'staff'
       let studQuery = supabase.from('students').select('id, name, phone, parent_name, parent_phone, student_code, batch_id, batches(name)').eq('institute_id', instituteId).eq('status', 'active')
-      let batchQuery = supabase.from('batches').select('id, name').eq('institute_id', instituteId)
+      let batchQuery = supabase.from('batches').select('id, name, teacher_id, profiles:teacher_id(full_name)').eq('institute_id', instituteId)
 
       if (isStaff) {
         const { data: myBatches } = await supabase
@@ -316,6 +304,53 @@ export default function NotificationCenter() {
           status: waStatus,
           sent_at: new Date().toISOString()
         })
+      }
+
+      // Send custom notification to unique teacher(s) of targeted batches
+      const teachersToNotify = []
+      if (target === 'batch') {
+        const batchObj = batches.find(b => b.id === selectedBatchId)
+        if (batchObj && batchObj.teacher_id) {
+          teachersToNotify.push({
+            id: batchObj.teacher_id,
+            name: batchObj.profiles?.full_name || 'Teacher',
+            batchName: batchObj.name
+          })
+        }
+      } else if (target === 'all') {
+        batches.forEach(batchObj => {
+          if (batchObj.teacher_id && !teachersToNotify.some(t => t.id === batchObj.teacher_id)) {
+            teachersToNotify.push({
+              id: batchObj.teacher_id,
+              name: batchObj.profiles?.full_name || 'Teacher',
+              batchName: batchObj.name
+            })
+          }
+        })
+      } else if (target === 'individual') {
+        const sObj = students.find(s => s.id === selectedStudentId)
+        if (sObj && sObj.batch_id) {
+          const batchObj = batches.find(b => b.id === sObj.batch_id)
+          if (batchObj && batchObj.teacher_id) {
+            teachersToNotify.push({
+              id: batchObj.teacher_id,
+              name: batchObj.profiles?.full_name || 'Teacher',
+              batchName: batchObj.name
+            })
+          }
+        }
+      }
+
+      if (teachersToNotify.length > 0) {
+        const teacherNotifRows = teachersToNotify.map(t => ({
+          institute_id: instituteId,
+          student_id: null,
+          type: messageType === 'custom' ? 'announcement' : messageType,
+          message: `[Teacher:${t.id}] Dear ${t.name}, an alert has been dispatched to your batch (${t.batchName}): ${messageText}`,
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        }))
+        await supabase.from('notifications').insert(teacherNotifRows)
       }
 
       const totalSent = targetStudents.length

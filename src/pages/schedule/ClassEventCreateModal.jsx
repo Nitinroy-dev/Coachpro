@@ -62,7 +62,7 @@ export default function ClassEventCreateModal({ onClose, onSaved }) {
 
   const fetchOptions = async () => {
     const [bRes, uRes] = await Promise.all([
-      supabase.from('batches').select('id, name').eq('institute_id', instituteId).order('name'),
+      supabase.from('batches').select('id, name, teacher_id').eq('institute_id', instituteId).order('name'),
       supabase.from('profiles').select('id, full_name').eq('institute_id', instituteId)
     ])
     const bList = bRes.data || []
@@ -206,6 +206,34 @@ export default function ClassEventCreateModal({ onClose, onSaved }) {
           sent_at: new Date().toISOString()
         }))
         await supabase.from('notifications').insert(notifRows)
+      }
+
+      // 4b. Create custom teacher notifications
+      const teachersToNotify = []
+      selectedBatches.forEach(bId => {
+        const batchObj = batches.find(b => b.id === bId)
+        if (batchObj && batchObj.teacher_id) {
+          const teacherProfile = teachers.find(t => t.id === batchObj.teacher_id)
+          if (teacherProfile && !teachersToNotify.some(t => t.id === teacherProfile.id)) {
+            teachersToNotify.push({
+              id: teacherProfile.id,
+              name: teacherProfile.full_name,
+              batchName: batchObj.name
+            })
+          }
+        }
+      })
+
+      if (teachersToNotify.length > 0) {
+        const teacherNotifRows = teachersToNotify.map(t => ({
+          institute_id: instituteId,
+          student_id: null,
+          type: typeMapping[eventType] || 'announcement',
+          message: `[Teacher:${t.id}] Dear ${t.name}, an alert has been scheduled for your batch (${t.batchName}): ${notificationMsg}`,
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        }))
+        await supabase.from('notifications').insert(teacherNotifRows)
       }
 
       // Auto mark cancelled in attendance if cancelled class event

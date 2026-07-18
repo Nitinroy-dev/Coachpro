@@ -102,19 +102,25 @@ export function useInAppNotifications() {
       if (studentId) query = query.eq('student_id', studentId)
       else return
     } else if (profile?.role === 'staff') {
-      if (myBatchStudentIds.length > 0) {
-        query = query.in('student_id', myBatchStudentIds)
-      } else {
-        setInAppNotifs([])
-        setUnreadCount(0)
-        return
-      }
+      query = query.is('student_id', null)
     }
 
     const { data } = await query
     if (data) {
-      setInAppNotifs(data)
-      setUnreadCount(data.length)
+      if (profile?.role === 'staff') {
+        const prefix = `[Teacher:${profile.id}]`
+        const filtered = data
+          .filter(n => n.message && n.message.startsWith(prefix))
+          .map(n => ({
+            ...n,
+            message: n.message.substring(prefix.length).trim()
+          }))
+        setInAppNotifs(filtered)
+        setUnreadCount(filtered.length)
+      } else {
+        setInAppNotifs(data)
+        setUnreadCount(data.length)
+      }
     }
   }, [instituteId, studentId, myBatchStudentIds, profile])
 
@@ -143,7 +149,19 @@ export function useInAppNotifications() {
           // Permission checks using Refs to avoid tearing down hook
           if (profile?.role === 'student' && n.student_id !== profile.id) return
           if (profile?.role === 'parent' && n.student_id !== studentIdRef.current) return
-          if (profile?.role === 'staff' && !myBatchStudentIdsRef.current.includes(n.student_id)) return
+          
+          if (profile?.role === 'staff') {
+            if (n.student_id !== null) return
+            const prefix = `[Teacher:${profile.id}]`
+            if (!n.message || !n.message.startsWith(prefix)) return
+            
+            const cleanMessage = n.message.substring(prefix.length).trim()
+            const cleanNotif = { ...n, message: cleanMessage }
+            setInAppNotifs((prev) => [cleanNotif, ...prev])
+            setUnreadCount((prev) => prev + 1)
+            playNotificationSound()
+            return
+          }
 
           setInAppNotifs((prev) => [n, ...prev])
           setUnreadCount((prev) => prev + 1)
