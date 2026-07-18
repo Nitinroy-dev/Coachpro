@@ -129,9 +129,10 @@ export function useInAppNotifications() {
   useEffect(() => {
     if (!instituteId) return
 
-    // Set up a single channel instance for this institute
+    // Set up a single channel instance for this institute with a unique random identifier to prevent React strict mode cache collision
+    const channelId = `inapp-notifs-${instituteId}-${Math.random().toString(36).substring(2, 10)}`
     const channel = supabase
-      .channel(`inapp-notifs-${instituteId}`)
+      .channel(channelId)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `institute_id=eq.${instituteId}` },
