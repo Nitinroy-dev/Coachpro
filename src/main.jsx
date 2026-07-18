@@ -9,35 +9,19 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
-// Register service worker for PWA
+// VitePWA (injectManifest mode) handles service worker registration via
+// the auto-generated registerSW.js. We do NOT manually register here to
+// avoid double-registration conflicts.
+//
+// The compiled service worker (src/sw.js → dist/sw.js) handles:
+//   - Workbox precaching & runtime caching
+//   - Native OS push notifications (via postMessage → SHOW_NOTIFICATION)
+//   - Notification click → navigate to /notifications
+//
+// When a new SW version is detected, the page auto-reloads via the
+// 'controllerchange' event below.
+
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-      
-      console.log('SW registered:', reg.scope)
-      
-      // Check for updates every 60 minutes
-      setInterval(() => {
-        reg.update()
-      }, 60 * 60 * 1000)
-
-      // When new version available:
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Show update notification to user
-            showUpdateBanner()
-          }
-        })
-      })
-    } catch (err) {
-      console.error('SW registration failed:', err)
-    }
-  })
-
   // Auto-reload page when new service worker takes control
   let refreshing = false
   navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -48,7 +32,8 @@ if ('serviceWorker' in navigator) {
   })
 }
 
-function showUpdateBanner() {
+// Show a top banner when VitePWA detects a new version (called from registerSW.js)
+window.__showUpdateBanner = function showUpdateBanner() {
   const banner = document.createElement('div')
   banner.innerHTML = `
     <div style="
@@ -71,5 +56,3 @@ function showUpdateBanner() {
   `
   document.body.prepend(banner)
 }
-
-
