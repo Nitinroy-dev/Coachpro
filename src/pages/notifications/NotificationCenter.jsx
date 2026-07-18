@@ -82,8 +82,10 @@ export default function NotificationCenter() {
       if (!isParent || parentChecked) {
         fetchNotifications()
       }
-      const isStaffOrAdmin = profile?.role !== 'student' && profile?.role !== 'parent'
-      if (isStaffOrAdmin) {
+      const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
+      const isSuperAdmin = profile?.email && profile.email.toLowerCase() === superadminEmail.toLowerCase()
+      const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || isSuperAdmin
+      if (isAdmin) {
         fetchDropdownData()
       }
     }
@@ -105,6 +107,7 @@ export default function NotificationCenter() {
     try {
       const isStudent = profile?.role === 'student'
       const isParent = profile?.role === 'parent'
+      const isStaff = profile?.role === 'staff'
 
       if (isStudent || isParent) {
         const studentId = isStudent ? profile.id : parentStudentId
@@ -116,6 +119,34 @@ export default function NotificationCenter() {
             .order('created_at', { ascending: false })
           if (error) throw error
           setNotifications(data || [])
+        } else {
+          setNotifications([])
+        }
+      } else if (isStaff) {
+        const { data: myBatches } = await supabase
+          .from('batches')
+          .select('id')
+          .eq('teacher_id', profile.id)
+        
+        const myBatchIds = (myBatches || []).map(b => b.id)
+        if (myBatchIds.length > 0) {
+          const { data: bStuds } = await supabase
+            .from('students')
+            .select('id')
+            .in('batch_id', myBatchIds)
+          const myBatchStudentIds = (bStuds || []).map(s => s.id)
+
+          if (myBatchStudentIds.length > 0) {
+            const { data, error } = await supabase
+              .from('notifications')
+              .select('*, students(name, phone, student_code)')
+              .in('student_id', myBatchStudentIds)
+              .order('created_at', { ascending: false })
+            if (error) throw error
+            setNotifications(data || [])
+          } else {
+            setNotifications([])
+          }
         } else {
           setNotifications([])
         }
@@ -369,10 +400,10 @@ export default function NotificationCenter() {
   }
 
   const isStudent = profile?.role === 'student'
+  const isStaff = profile?.role === 'staff'
 
-  if (isStudent || isParent) {
-    const studentId = isStudent ? profile.id : parentStudentId
-    if (!studentId) {
+  if (isStudent || isParent || isStaff) {
+    if (isParent && !parentStudentId) {
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -395,7 +426,12 @@ export default function NotificationCenter() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Inbox & Alerts</h1>
-            <p className="text-sm text-gray-500">Stay updated with class cancellations, extra sessions, exams, and fee announcements</p>
+            <p className="text-sm text-gray-500">
+              {isStaff
+                ? 'Announcements and notifications dispatched to students in your batches'
+                : 'Stay updated with class cancellations, extra sessions, exams, and fee announcements'
+              }
+            </p>
           </div>
         </div>
 
