@@ -27,6 +27,7 @@ export default function AttendanceList() {
   const [selectedBatch, setSelectedBatch] = useState('')
   const [selectedStudent, setSelectedStudent] = useState('')
   const [selectedDailyDate, setSelectedDailyDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDailyBatch, setSelectedDailyBatch] = useState('all')
 
   // Datasets
   const [attendanceData, setAttendanceData] = useState([])
@@ -37,7 +38,7 @@ export default function AttendanceList() {
 
   useEffect(() => {
     if (instituteId) fetchAttendanceData()
-  }, [instituteId, selectedBatch, selectedStudent, selectedDailyDate, activeReportTab])
+  }, [instituteId, selectedBatch, selectedStudent, selectedDailyDate, selectedDailyBatch, activeReportTab])
 
   const fetchOptions = async () => {
     const isStaff = profile?.role === 'staff'
@@ -100,6 +101,9 @@ export default function AttendanceList() {
 
       if (activeReportTab === 'daily') {
         query = query.eq('date', selectedDailyDate)
+        if (selectedDailyBatch !== 'all') {
+          query = query.eq('batch_id', selectedDailyBatch)
+        }
       } else if (activeReportTab === 'student') {
         if (selectedStudent) query = query.eq('student_id', selectedStudent)
       }
@@ -135,6 +139,35 @@ export default function AttendanceList() {
   const stHoliday = studAtts.filter(a => a.status === 'holiday').length
   const stEffective = stPresent + stAbsent + stLate
   const stPct = stEffective > 0 ? Math.round(((stPresent + stLate) / stEffective) * 100) : 100
+
+  const rosterRows = (() => {
+    if (selectedDailyBatch === 'all') {
+      return attendanceData.map(a => ({
+        id: a.id,
+        studentName: a.students?.name || '—',
+        studentCode: a.students?.student_code || '—',
+        batchName: a.batches?.name || '—',
+        status: a.status,
+        isMarked: true
+      }))
+    }
+
+    // Filter students by selected batch
+    const targetStudents = students.filter(s => s.batch_id === selectedDailyBatch)
+    const selectedBatchName = batches.find(b => b.id === selectedDailyBatch)?.name || 'Selected Batch'
+
+    return targetStudents.map(s => {
+      const attRecord = attendanceData.find(a => a.student_id === s.id)
+      return {
+        id: s.id,
+        studentName: s.name,
+        studentCode: s.student_code,
+        batchName: selectedBatchName,
+        status: attRecord ? attRecord.status : 'not_marked',
+        isMarked: !!attRecord
+      }
+    })
+  })()
 
   const exportBatchReportCSV = () => {
     const headers = ['Student Code', 'Student Name', 'Present', 'Absent', 'Late', 'Holiday', 'Total Days', 'Attendance %']
@@ -308,12 +341,18 @@ export default function AttendanceList() {
       {/* REPORT 1: DAILY ROSTER REPORT */}
       {activeReportTab === 'daily' && (
         <div className="space-y-4">
-          <Card className="p-4 max-w-md">
+          <Card className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Select Daily Date *"
               type="date"
               value={selectedDailyDate}
               onChange={(e) => setSelectedDailyDate(e.target.value)}
+            />
+            <Select
+              label="Filter by Batch"
+              value={selectedDailyBatch}
+              onChange={(e) => setSelectedDailyBatch(e.target.value)}
+              options={[{ value: 'all', label: 'All Batches' }, ...batches.map(b => ({ value: b.id, label: b.name }))]}
             />
           </Card>
 
@@ -321,8 +360,8 @@ export default function AttendanceList() {
             <CardHeader><CardTitle>Daily Roster for {new Date(selectedDailyDate).toLocaleDateString('en-IN')}</CardTitle></CardHeader>
             {loading ? (
               <TableRowSkeleton rows={4} />
-            ) : attendanceData.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 text-sm">No attendance recorded on this date across any batch.</div>
+            ) : rosterRows.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 text-sm">No attendance recorded or students found matching this criteria.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
@@ -334,11 +373,22 @@ export default function AttendanceList() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {attendanceData.map(a => (
-                      <tr key={a.id} className="hover:bg-gray-50/80 transition-colors">
-                        <td className="p-3.5 font-bold text-gray-900">{a.students?.name || '—'}</td>
-                        <td className="p-3.5 text-xs text-gray-600">{a.batches?.name || '—'}</td>
-                        <td className="p-3.5"><StatusBadge status={a.status} /></td>
+                    {rosterRows.map(r => (
+                      <tr key={r.id} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="p-3.5">
+                          <p className="font-bold text-gray-900">{r.studentName}</p>
+                          <p className="text-[10px] font-mono text-gray-400">{r.studentCode}</p>
+                        </td>
+                        <td className="p-3.5 text-xs text-gray-600">{r.batchName}</td>
+                        <td className="p-3.5">
+                          {r.status === 'not_marked' ? (
+                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-400 border border-gray-200">
+                              Not Marked
+                            </span>
+                          ) : (
+                            <StatusBadge status={r.status} />
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
