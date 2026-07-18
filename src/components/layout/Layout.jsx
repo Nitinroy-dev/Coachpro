@@ -175,8 +175,8 @@ export default function Layout() {
 
   return (
     <SubscriptionGuard>
-      <div className={rotationClass}>
-        <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
+      <div className={rotationClass ? `${rotationClass} h-full w-full` : "h-screen w-screen flex flex-col"}>
+        <div className="flex flex-col h-full w-full bg-[#F8FAFC] overflow-hidden">
 
         {/* In-App Notification Banner */}
         {notifBanner && (
