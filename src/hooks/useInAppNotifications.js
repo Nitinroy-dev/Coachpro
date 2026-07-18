@@ -45,35 +45,58 @@ export async function requestNotificationPermission() {
 
 /**
  * Fire a native OS / phone-panel notification.
- * Uses ServiceWorker showNotification if available (works in PWA on Android),
- * otherwise falls back to the plain Notification API.
+ *
+ * Strategy (most → least reliable):
+ * 1. Post a SHOW_NOTIFICATION message to the active Service Worker.
+ *    The SW's message handler calls showNotification() — this reliably
+ *    appears in the Android system notification shade for both browser tabs
+ *    and installed PWAs.
+ * 2. If no SW controller, call reg.showNotification() directly.
+ * 3. If no SW at all, fall back to the Notification constructor (desktop).
  */
-async function fireNativeNotification(title, body, url = '/dashboard') {
+async function fireNativeNotification(title, body, url = '/notifications') {
   if (!('Notification' in window)) return
   if (Notification.permission !== 'granted') return
 
   try {
-    // Prefer service worker notification (shows in Android notification shade for PWA)
     if ('serviceWorker' in navigator) {
+      // Wait for the service worker to be ready
       const reg = await navigator.serviceWorker.ready
-      await reg.showNotification(title, {
-        body,
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-96.png',
-        tag: `batchdesk-notif-${Date.now()}`,
-        renotify: true,
-        data: { url },
-        vibrate: [200, 100, 200],
-      })
+
+      // Preferred: send a message to the SW — it fires showNotification() from inside the SW context
+      // This is more reliable on Android Chrome than calling reg.showNotification() from page JS
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SHOW_NOTIFICATION',
+          title: title || 'Batch Desk',
+          body: (body || 'You have a new notification').slice(0, 200),
+          url: url || '/notifications',
+        })
+      } else {
+        // SW is ready but not yet controlling this tab — call directly
+        await reg.showNotification(title || 'Batch Desk', {
+          body: (body || 'You have a new notification').slice(0, 200),
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-96.png',
+          tag: `batchdesk-notif-${Date.now()}`,
+          renotify: true,
+          data: { url: url || '/notifications' },
+          vibrate: [200, 100, 200],
+        })
+      }
     } else {
-      // Fallback for browsers without service worker
-      new Notification(title, {
-        body,
+      // Desktop fallback — no service worker
+      new Notification(title || 'Batch Desk', {
+        body: (body || 'You have a new notification').slice(0, 200),
         icon: '/icons/icon-192.png',
       })
     }
   } catch (e) {
     console.warn('Native notification error:', e)
+    // Last resort fallback
+    try {
+      new Notification(title || 'Batch Desk', { body: body || '' })
+    } catch (_) { /* silent */ }
   }
 }
 

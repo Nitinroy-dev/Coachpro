@@ -9,6 +9,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Use injectManifest so we can have a fully custom service worker
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       includeAssets: ['favicon.png', 'icons/*.png'],
       manifest: {
         name: 'Batch Desk',
@@ -47,43 +51,10 @@ export default defineConfig({
           }
         ]
       },
-      workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 5 * 60
-              },
-              networkTimeoutSeconds: 5
-            }
-          },
-          {
-            urlPattern: /\.(png|jpg|jpeg|svg|gif|webp)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'image-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 7 * 24 * 60 * 60
-              }
-            }
-          },
-          {
-            urlPattern: /\.(js|css)$/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'static-cache'
-            }
-          }
-        ]
+      injectManifest: {
+        injectionPoint: 'self.__WB_MANIFEST',
+        rollupFormat: 'es',
       }
     })
   ],
 })
-
