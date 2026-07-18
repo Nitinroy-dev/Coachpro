@@ -36,6 +36,9 @@ export function AuthProvider({ children }) {
       } else {
         setLoading(false)
       }
+    }).catch(err => {
+      console.error('Session retrieval error:', err)
+      setLoading(false) // Safe fallback to unblock loading screen
     })
 
     // Listen for auth changes
