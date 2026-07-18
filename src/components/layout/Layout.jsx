@@ -21,37 +21,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [rotationClass, setRotationClass] = useState('')
 
-  useEffect(() => {
-    const handleOrientationCheck = () => {
-      const locked = localStorage.getItem('orientation_lock') === 'true'
-      const isLandscape = window.innerWidth > window.innerHeight && window.innerWidth < 1024
-      
-      if (locked && isLandscape) {
-        // Detect current landscape rotation angle to align correctly
-        const angle = window.screen?.orientation?.angle ?? window.orientation ?? 90
-        if (angle === -90 || angle === 270) {
-          setRotationClass('lock-portrait-rotation-270')
-        } else {
-          setRotationClass('lock-portrait-rotation-90')
-        }
-      } else {
-        setRotationClass('')
-      }
-    }
-
-    handleOrientationCheck()
-    window.addEventListener('resize', handleOrientationCheck)
-    window.addEventListener('orientationchange', handleOrientationCheck)
-    window.addEventListener('orientation_lock_change', handleOrientationCheck)
-
-    return () => {
-      window.removeEventListener('resize', handleOrientationCheck)
-      window.removeEventListener('orientationchange', handleOrientationCheck)
-      window.removeEventListener('orientation_lock_change', handleOrientationCheck)
-    }
-  }, [])
 
   // Bug & Issue Reporting states
   const [showBugModal, setShowBugModal] = useState(false)
@@ -175,8 +145,7 @@ export default function Layout() {
 
   return (
     <SubscriptionGuard>
-      <div className={rotationClass ? `${rotationClass} h-full w-full` : "h-screen w-screen flex flex-col"}>
-        <div className="flex flex-col h-full w-full bg-[#F8FAFC] overflow-hidden">
+      <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
 
         {/* In-App Notification Banner */}
         {notifBanner && (
@@ -443,7 +412,6 @@ export default function Layout() {
             </div>
           </div>
         )}
-      </div>
       </div>
     </SubscriptionGuard>
   )

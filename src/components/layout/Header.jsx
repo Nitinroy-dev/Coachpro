@@ -1,8 +1,7 @@
-import { Menu, Bell, Search, Download, Lock, Unlock } from 'lucide-react'
+import { Menu, Bell, Search, Download } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLocation, Link } from 'react-router-dom'
 import { useInAppNotifications } from '../../hooks/useInAppNotifications'
-import { useState, useEffect } from 'react'
 
 const pageTitles = {
   '/dashboard': 'Dashboard',
@@ -20,60 +19,6 @@ export default function Header({ onMenuToggle }) {
   const { user, institute, showInstallBtn, handleInstall } = useAuth()
   const { unreadCount } = useInAppNotifications()
   const location = useLocation()
-  
-  const [isLocked, setIsLocked] = useState(
-    localStorage.getItem('orientation_lock') === 'true'
-  )
-
-  useEffect(() => {
-    const handleOrientationCheck = () => {
-      const locked = localStorage.getItem('orientation_lock') === 'true'
-      const isLandscape = window.innerWidth > window.innerHeight && window.innerWidth < 1024
-      
-      if (locked && isLandscape) {
-        document.body.classList.add('lock-portrait-rotation')
-      } else {
-        document.body.classList.remove('lock-portrait-rotation')
-      }
-    }
-
-    const applySystemLock = () => {
-      if (isLocked) {
-        try {
-          if (screen.orientation && typeof screen.orientation.lock === 'function') {
-            screen.orientation.lock('portrait-primary').catch(() => {})
-          }
-        } catch (e) {}
-      }
-    }
-
-    applySystemLock()
-    handleOrientationCheck()
-
-    window.addEventListener('resize', handleOrientationCheck)
-    window.addEventListener('orientationchange', handleOrientationCheck)
-
-    return () => {
-      window.removeEventListener('resize', handleOrientationCheck)
-      window.removeEventListener('orientationchange', handleOrientationCheck)
-      document.body.classList.remove('lock-portrait-rotation')
-    }
-  }, [isLocked])
-
-  const toggleOrientationLock = () => {
-    const nextState = !isLocked
-    setIsLocked(nextState)
-    localStorage.setItem('orientation_lock', String(nextState))
-    if (!nextState) {
-      try {
-        if (screen.orientation && typeof screen.orientation.unlock === 'function') {
-          screen.orientation.unlock()
-        }
-      } catch (e) {}
-      document.body.classList.remove('lock-portrait-rotation')
-    }
-    window.dispatchEvent(new Event('orientation_lock_change'))
-  }
 
   const superadminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL || 'nitinroy20061995@gmail.com'
   const isSuperAdmin = user?.email && user.email.toLowerCase() === superadminEmail.toLowerCase()
@@ -127,27 +72,14 @@ export default function Header({ onMenuToggle }) {
 
         {/* Notification bell linking to notifications panel or toggling read */}
         {!isSuperAdmin && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={toggleOrientationLock}
-              className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors flex items-center justify-center cursor-pointer"
-              title={isLocked ? "Unlock screen rotation" : "Lock portrait orientation"}
-            >
-              {isLocked ? (
-                <Lock size={18} className="text-[#F97316] animate-pulse" />
-              ) : (
-                <Unlock size={18} />
-              )}
-            </button>
-            <Link to="/notifications" className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#F97316] text-white font-extrabold text-[9px] flex items-center justify-center border border-white leading-none shadow-xs">
-                  {unreadCount}
-                </span>
-              )}
-            </Link>
-          </div>
+          <Link to="/notifications" className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#F97316] text-white font-extrabold text-[9px] flex items-center justify-center border border-white leading-none shadow-xs">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
         )}
       </div>
     </header>
