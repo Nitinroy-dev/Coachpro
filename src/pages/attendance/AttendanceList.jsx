@@ -14,6 +14,7 @@ import { TableRowSkeleton } from '../../components/ui/Skeleton'
 export default function AttendanceList() {
   const { profile } = useAuth()
   const instituteId = profile?.institute_id
+  const isStaff = profile?.role === 'staff'
   const navigate = useNavigate()
 
   const [activeReportTab, setActiveReportTab] = useState('batch') // batch | student | daily
@@ -58,7 +59,6 @@ export default function AttendanceList() {
   }, [instituteId, selectedBatch, selectedStudent, selectedDailyDate, selectedDailyBatch, activeReportTab])
 
   const fetchOptions = async () => {
-    const isStaff = profile?.role === 'staff'
     let batchQuery = supabase.from('batches').select('id, name, courses(name)').eq('institute_id', instituteId)
     let studentQuery = supabase.from('students').select('id, name, student_code, batch_id').eq('institute_id', instituteId).eq('status', 'active')
 
@@ -258,9 +258,11 @@ export default function AttendanceList() {
                 options={batches.map(b => ({ value: b.id, label: `${b.name} (${b.courses?.name || 'Course'})` }))}
               />
             </div>
-            <Button size="sm" variant="outline" icon={Upload} onClick={exportBatchReportCSV} className="bg-white">
-              Export CSV Report
-            </Button>
+            {!isStaff && (
+              <Button size="sm" variant="outline" icon={Upload} onClick={exportBatchReportCSV} className="bg-white">
+                Export CSV Report
+              </Button>
+            )}
           </Card>
 
           <Card>

@@ -284,15 +284,17 @@ export default function StudentList() {
           <p className="text-sm text-gray-500">{students.length} students enrolled across all batches</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            icon={Upload}
-            onClick={exportCSV}
-            disabled={students.length === 0}
-            className="bg-white"
-          >
-            Export CSV
-          </Button>
+          {!isStaff && (
+            <Button
+              variant="outline"
+              icon={Upload}
+              onClick={exportCSV}
+              disabled={students.length === 0}
+              className="bg-white"
+            >
+              Export CSV
+            </Button>
+          )}
           {!isStaff && (
             <Button
               variant="accent"
