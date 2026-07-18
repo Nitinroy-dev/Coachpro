@@ -36,8 +36,41 @@ export function useInAppNotifications() {
   const [unreadCount, setUnreadCount] = useState(0)
   const channelRef = useRef(null)
 
-  const studentId = profile?.role === 'student' ? profile?.id : null
+  const [studentId, setStudentId] = useState(profile?.role === 'student' ? profile?.id : null)
+  const [myBatchStudentIds, setMyBatchStudentIds] = useState([])
   const instituteId = profile?.institute_id
+
+  useEffect(() => {
+    async function resolveRoleContext() {
+      if (!profile) return
+      
+      if (profile.role === 'parent') {
+        const { data: child } = await supabase
+          .from('students')
+          .select('id')
+          .eq('parent_email', profile.email)
+          .maybeSingle()
+        if (child) {
+          setStudentId(child.id)
+        }
+      } else if (profile.role === 'staff') {
+        const { data: myBatches } = await supabase
+          .from('batches')
+          .select('id')
+          .eq('teacher_id', profile.id)
+        
+        const myBatchIds = (myBatches || []).map(b => b.id)
+        if (myBatchIds.length > 0) {
+          const { data: bStuds } = await supabase
+            .from('students')
+            .select('id')
+            .in('batch_id', myBatchIds)
+          setMyBatchStudentIds((bStuds || []).map(s => s.id))
+        }
+      }
+    }
+    resolveRoleContext()
+  }, [profile])
 
   const fetchInitial = useCallback(async () => {
     if (!instituteId) return
@@ -45,22 +78,36 @@ export function useInAppNotifications() {
       .from('notifications')
       .select('id, type, message, status, created_at, student_id')
       .eq('institute_id', instituteId)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'sent'])
       .order('created_at', { ascending: false })
       .limit(30)
-    if (studentId) query = query.eq('student_id', studentId)
+
+    if (profile?.role === 'student') {
+      query = query.eq('student_id', profile.id)
+    } else if (profile?.role === 'parent') {
+      if (studentId) query = query.eq('student_id', studentId)
+      else return
+    } else if (profile?.role === 'staff') {
+      if (myBatchStudentIds.length > 0) {
+        query = query.in('student_id', myBatchStudentIds)
+      } else {
+        setInAppNotifs([])
+        setUnreadCount(0)
+        return
+      }
+    }
+
     const { data } = await query
     if (data) {
       setInAppNotifs(data)
       setUnreadCount(data.length)
     }
-  }, [instituteId, studentId])
+  }, [instituteId, studentId, myBatchStudentIds, profile])
 
   useEffect(() => {
     if (!instituteId) return
     fetchInitial()
 
-    // Subscribe to new notification inserts via Supabase Realtime
     const channel = supabase
       .channel(`inapp-notifs-${instituteId}-${Date.now()}`)
       .on(
@@ -68,8 +115,13 @@ export function useInAppNotifications() {
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `institute_id=eq.${instituteId}` },
         (payload) => {
           const n = payload.new
-          // Students only receive their own notifications
-          if (studentId && n.student_id !== studentId) return
+          if (n.status !== 'pending' && n.status !== 'sent') return
+
+          // Role permission checks
+          if (profile?.role === 'student' && n.student_id !== profile.id) return
+          if (profile?.role === 'parent' && n.student_id !== studentId) return
+          if (profile?.role === 'staff' && !myBatchStudentIds.includes(n.student_id)) return
+
           setInAppNotifs((prev) => [n, ...prev])
           setUnreadCount((prev) => prev + 1)
           playNotificationSound()
@@ -81,7 +133,7 @@ export function useInAppNotifications() {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current)
     }
-  }, [instituteId, studentId])
+  }, [instituteId, studentId, myBatchStudentIds, profile, fetchInitial])
 
   const markAllRead = useCallback(async () => {
     if (!instituteId || inAppNotifs.length === 0) return
