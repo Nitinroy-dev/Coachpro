@@ -100,7 +100,7 @@ export default function Layout() {
   const isStaff = profile?.role === 'staff'
 
   // Centralized Route Protection for Teachers/Staff
-  const adminOnlyPaths = ['/fees', '/billing', '/settings', '/notifications', '/superadmin', '/students/new']
+  const adminOnlyPaths = ['/fees', '/billing', '/settings', '/superadmin', '/students/new']
   if (isStaff && adminOnlyPaths.some(path => location.pathname.startsWith(path))) {
     return <Navigate to="/dashboard" replace />
   }

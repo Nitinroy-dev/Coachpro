@@ -24,6 +24,8 @@ export default function NotificationCenter() {
   const [batches, setBatches] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+  const [parentStudentId, setParentStudentId] = useState(null)
+  const [parentChecked, setParentChecked] = useState(false)
 
   // Send message form states
   const [target, setTarget] = useState('individual') // individual | batch | all
@@ -56,15 +58,36 @@ export default function NotificationCenter() {
     custom: "Dear [Student Name],\n\n[Write your custom message here]\n\n_CoachPro - Management_"
   }
 
+  const isParent = profile?.role === 'parent'
+
+  useEffect(() => {
+    async function getParentChild() {
+      if (profile?.role === 'parent') {
+        const { data } = await supabase
+          .from('students')
+          .select('id')
+          .eq('parent_email', profile.email)
+          .maybeSingle()
+        if (data) {
+          setParentStudentId(data.id)
+        }
+        setParentChecked(true)
+      }
+    }
+    getParentChild()
+  }, [profile])
+
   useEffect(() => {
     if (instituteId) {
-      fetchNotifications()
+      if (!isParent || parentChecked) {
+        fetchNotifications()
+      }
       const isStaffOrAdmin = profile?.role !== 'student' && profile?.role !== 'parent'
       if (isStaffOrAdmin) {
         fetchDropdownData()
       }
     }
-  }, [instituteId])
+  }, [instituteId, parentStudentId, parentChecked])
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -84,7 +107,7 @@ export default function NotificationCenter() {
       const isParent = profile?.role === 'parent'
 
       if (isStudent || isParent) {
-        const studentId = isStudent ? profile.id : profile.linked_student_id
+        const studentId = isStudent ? profile.id : parentStudentId
         if (studentId) {
           const { data, error } = await supabase
             .from('notifications')
@@ -115,9 +138,31 @@ export default function NotificationCenter() {
 
   const fetchDropdownData = async () => {
     try {
+      const isStaff = profile?.role === 'staff'
+      let studQuery = supabase.from('students').select('id, name, phone, parent_name, parent_phone, student_code, batch_id, batches(name)').eq('institute_id', instituteId).eq('status', 'active')
+      let batchQuery = supabase.from('batches').select('id, name').eq('institute_id', instituteId)
+
+      if (isStaff) {
+        const { data: myBatches } = await supabase
+          .from('batches')
+          .select('id')
+          .eq('teacher_id', profile.id)
+
+        const myBatchIds = (myBatches || []).map(b => b.id)
+
+        if (myBatchIds.length === 0) {
+          setStudents([])
+          setBatches([])
+          return
+        }
+
+        studQuery = studQuery.in('batch_id', myBatchIds)
+        batchQuery = batchQuery.in('id', myBatchIds)
+      }
+
       const [studRes, batchRes] = await Promise.all([
-        supabase.from('students').select('id, name, phone, parent_name, parent_phone, student_code, batch_id, batches(name)').eq('institute_id', instituteId).eq('status', 'active'),
-        supabase.from('batches').select('id, name').eq('institute_id', instituteId).order('name')
+        studQuery,
+        batchQuery.order('name')
       ])
       setStudents(studRes.data || [])
       setBatches(batchRes.data || [])
@@ -324,10 +369,9 @@ export default function NotificationCenter() {
   }
 
   const isStudent = profile?.role === 'student'
-  const isParent = profile?.role === 'parent'
 
   if (isStudent || isParent) {
-    const studentId = isStudent ? profile.id : profile.linked_student_id
+    const studentId = isStudent ? profile.id : parentStudentId
     if (!studentId) {
       return (
         <div className="space-y-6">
