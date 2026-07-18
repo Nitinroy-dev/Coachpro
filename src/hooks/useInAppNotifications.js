@@ -38,7 +38,20 @@ export function useInAppNotifications() {
 
   const [studentId, setStudentId] = useState(profile?.role === 'student' ? profile?.id : null)
   const [myBatchStudentIds, setMyBatchStudentIds] = useState([])
+  const [parentChecked, setParentChecked] = useState(false)
   const instituteId = profile?.institute_id
+
+  // Refs to prevent teardowns and double subscribe errors on real-time channel
+  const studentIdRef = useRef(studentId)
+  const myBatchStudentIdsRef = useRef(myBatchStudentIds)
+
+  useEffect(() => {
+    studentIdRef.current = studentId
+  }, [studentId])
+
+  useEffect(() => {
+    myBatchStudentIdsRef.current = myBatchStudentIds
+  }, [myBatchStudentIds])
 
   useEffect(() => {
     async function resolveRoleContext() {
@@ -53,6 +66,7 @@ export function useInAppNotifications() {
         if (child) {
           setStudentId(child.id)
         }
+        setParentChecked(true)
       } else if (profile.role === 'staff') {
         const { data: myBatches } = await supabase
           .from('batches')
@@ -104,12 +118,20 @@ export function useInAppNotifications() {
     }
   }, [instituteId, studentId, myBatchStudentIds, profile])
 
+  // Run fetchInitial when parent checks or state updates
+  useEffect(() => {
+    if (instituteId) {
+      if (profile?.role === 'parent' && !parentChecked) return
+      fetchInitial()
+    }
+  }, [instituteId, studentId, myBatchStudentIds, parentChecked, fetchInitial])
+
   useEffect(() => {
     if (!instituteId) return
-    fetchInitial()
 
+    // Set up a single channel instance for this institute
     const channel = supabase
-      .channel(`inapp-notifs-${instituteId}-${Date.now()}`)
+      .channel(`inapp-notifs-${instituteId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `institute_id=eq.${instituteId}` },
@@ -117,10 +139,10 @@ export function useInAppNotifications() {
           const n = payload.new
           if (n.status !== 'pending' && n.status !== 'sent') return
 
-          // Role permission checks
+          // Permission checks using Refs to avoid tearing down hook
           if (profile?.role === 'student' && n.student_id !== profile.id) return
-          if (profile?.role === 'parent' && n.student_id !== studentId) return
-          if (profile?.role === 'staff' && !myBatchStudentIds.includes(n.student_id)) return
+          if (profile?.role === 'parent' && n.student_id !== studentIdRef.current) return
+          if (profile?.role === 'staff' && !myBatchStudentIdsRef.current.includes(n.student_id)) return
 
           setInAppNotifs((prev) => [n, ...prev])
           setUnreadCount((prev) => prev + 1)
@@ -133,7 +155,7 @@ export function useInAppNotifications() {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current)
     }
-  }, [instituteId, studentId, myBatchStudentIds, profile, fetchInitial])
+  }, [instituteId, profile?.role])
 
   const markAllRead = useCallback(async () => {
     if (!instituteId || inAppNotifs.length === 0) return
