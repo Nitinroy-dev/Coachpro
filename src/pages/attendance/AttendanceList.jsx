@@ -142,10 +142,11 @@ export default function AttendanceList() {
     const absent = sAtts.filter(a => a.status === 'absent').length
     const late = sAtts.filter(a => a.status === 'late').length
     const holiday = sAtts.filter(a => a.status === 'holiday').length
+    const cancelled = sAtts.filter(a => a.status === 'cancelled').length
     const effectiveDays = present + absent + late
     const attPct = effectiveDays > 0 ? Math.round(((present + late) / effectiveDays) * 100) : 100
 
-    return { student: s, present, absent, late, holiday, totalDays: sAtts.length, attPct }
+    return { student: s, present, absent, late, holiday, cancelled, totalDays: sAtts.length, attPct }
   }).sort((a, b) => a.attPct - b.attPct) // Ascending order (lowest first)
 
   // Report 2: Student calendar statistics
@@ -154,6 +155,7 @@ export default function AttendanceList() {
   const stAbsent = studAtts.filter(a => a.status === 'absent').length
   const stLate = studAtts.filter(a => a.status === 'late').length
   const stHoliday = studAtts.filter(a => a.status === 'holiday').length
+  const stCancelled = studAtts.filter(a => a.status === 'cancelled').length
   const stEffective = stPresent + stAbsent + stLate
   const stPct = stEffective > 0 ? Math.round(((stPresent + stLate) / stEffective) * 100) : 100
 
@@ -187,7 +189,7 @@ export default function AttendanceList() {
   })()
 
   const exportBatchReportCSV = () => {
-    const headers = ['Student Code', 'Student Name', 'Present', 'Absent', 'Late', 'Holiday', 'Total Days', 'Attendance %']
+    const headers = ['Student Code', 'Student Name', 'Present', 'Absent', 'Late', 'Holiday', 'Cancelled', 'Total Days', 'Attendance %']
     const rows = batchAnalytics.map(b => [
       b.student.student_code || 'N/A',
       `"${b.student.name}"`,
@@ -195,6 +197,7 @@ export default function AttendanceList() {
       b.absent,
       b.late,
       b.holiday,
+      b.cancelled || 0,
       b.totalDays,
       `="${b.attPct}%"`
     ])
@@ -274,13 +277,14 @@ export default function AttendanceList() {
                       <th className="p-3.5">Absent 🔴</th>
                       <th className="p-3.5">Late 🟡</th>
                       <th className="p-3.5">Holiday ⚫</th>
+                      <th className="p-3.5">Cancelled ⚪</th>
                       <th className="p-3.5">Total Days</th>
                       <th className="p-3.5 text-right">Attendance Rate %</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {batchAnalytics.length === 0 ? (
-                      <tr><td colSpan={8} className="p-8 text-center text-gray-400">No students found in this batch.</td></tr>
+                      <tr><td colSpan={9} className="p-8 text-center text-gray-400">No students found in this batch.</td></tr>
                     ) : batchAnalytics.map(b => {
                       const badgeColor = b.attPct < 75 
                         ? 'bg-red-100 text-red-700 border-red-200' 
@@ -298,6 +302,7 @@ export default function AttendanceList() {
                           <td className="p-3.5 font-bold text-red-600">{b.absent}</td>
                           <td className="p-3.5 font-bold text-yellow-600">{b.late}</td>
                           <td className="p-3.5 text-gray-500">{b.holiday}</td>
+                          <td className="p-3.5 text-gray-500">{b.cancelled}</td>
                           <td className="p-3.5 font-semibold text-gray-800">{b.totalDays}</td>
                           <td className="p-3.5 text-right">
                             <span className={`inline-block px-3 py-1 rounded-xl font-extrabold text-xs border ${badgeColor}`}>
@@ -328,11 +333,12 @@ export default function AttendanceList() {
           </Card>
 
           <Card className="p-6 bg-gradient-to-br from-white to-blue-50/30 border border-blue-100">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-center mb-6">
               <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs"><p className="text-[10px] uppercase font-bold text-green-600">Present 🟢</p><p className="text-xl font-bold text-green-600">{stPresent}</p></div>
               <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs"><p className="text-[10px] uppercase font-bold text-red-600">Absent 🔴</p><p className="text-xl font-bold text-red-600">{stAbsent}</p></div>
               <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs"><p className="text-[10px] uppercase font-bold text-yellow-600">Late 🟡</p><p className="text-xl font-bold text-yellow-600">{stLate}</p></div>
               <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs"><p className="text-[10px] uppercase font-bold text-gray-500">Holiday ⚫</p><p className="text-xl font-bold text-gray-500">{stHoliday}</p></div>
+              <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs"><p className="text-[10px] uppercase font-bold text-gray-500">Cancelled ⚪</p><p className="text-xl font-bold text-gray-500">{stCancelled}</p></div>
               <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs"><p className="text-[10px] uppercase font-bold text-[#1E3A8A]">Attendance %</p><p className="text-xl font-extrabold text-[#1E3A8A]">{stPct}%</p></div>
             </div>
 
