@@ -208,7 +208,7 @@ export default function ClassEventCreateModal({ onClose, onSaved }) {
         await supabase.from('notifications').insert(notifRows)
       }
 
-      // Auto mark holiday in attendance if cancelled class event
+      // Auto mark cancelled in attendance if cancelled class event
       if (eventType === 'cancelled' && form.auto_holiday && targetBatchId) {
         const { data: studList } = await supabase.from('students').select('id').eq('batch_id', targetBatchId).eq('status', 'active')
         if (studList && studList.length > 0) {
@@ -216,7 +216,7 @@ export default function ClassEventCreateModal({ onClose, onSaved }) {
             institute_id: instituteId,
             student_id: s.id,
             date: form.date,
-            status: 'holiday'
+            status: 'cancelled'
           }))
           await supabase.from('attendance').upsert(attRows, { onConflict: 'student_id,date' })
         }
