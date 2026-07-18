@@ -882,20 +882,20 @@ export default function Dashboard() {
                         }
                       `}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${c.isCancelled ? 'bg-red-200 text-red-800' : c.isExtra ? 'bg-green-200 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${c.isCancelled ? 'bg-red-200 text-red-800' : c.isExtra ? 'bg-green-200 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                           {c.batchName.slice(0, 2).toUpperCase()}
                         </div>
-                        <div>
-                          <p className={`font-semibold ${c.isCancelled ? 'line-through text-red-600' : ''}`}>
+                        <div className="min-w-0">
+                          <p className={`font-semibold truncate ${c.isCancelled ? 'line-through text-red-600' : ''}`}>
                             {c.subject}
                           </p>
-                          <p className="text-xs opacity-75">{c.batchName} · {c.teacherName}</p>
+                          <p className="text-xs opacity-75 truncate">{c.batchName} · {c.teacherName}</p>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/80 border shadow-2xs">
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/80 border shadow-2xs whitespace-nowrap">
                           {c.timing}
                         </span>
                         {c.isCancelled && <span className="block text-[10px] font-bold text-red-600 mt-0.5">CANCELLED</span>}
