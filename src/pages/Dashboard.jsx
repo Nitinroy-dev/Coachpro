@@ -78,6 +78,21 @@ export default function Dashboard() {
       fetchStudentDashboardData()
     } else if (instituteId) {
       fetchComprehensiveDashboardData()
+
+      const channel = supabase
+        .channel('dashboard-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public' },
+          () => {
+            fetchComprehensiveDashboardData()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
   }, [instituteId, profile])
 

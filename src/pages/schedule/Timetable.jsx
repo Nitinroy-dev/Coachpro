@@ -51,7 +51,24 @@ export default function Timetable() {
   }, [instituteId])
 
   useEffect(() => {
-    if (selectedBatch) fetchSchedule()
+    if (selectedBatch) {
+      fetchSchedule()
+
+      const channel = supabase
+        .channel('timetable-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'class_schedule', filter: `batch_id=eq.${selectedBatch}` },
+          () => {
+            fetchSchedule()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
   }, [selectedBatch])
 
   const fetchBatches = async () => {

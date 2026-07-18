@@ -37,7 +37,24 @@ export default function AttendanceList() {
   }, [instituteId])
 
   useEffect(() => {
-    if (instituteId) fetchAttendanceData()
+    if (instituteId) {
+      fetchAttendanceData()
+
+      const channel = supabase
+        .channel('attendance-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'attendance', filter: `institute_id=eq.${instituteId}` },
+          () => {
+            fetchAttendanceData()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
   }, [instituteId, selectedBatch, selectedStudent, selectedDailyDate, selectedDailyBatch, activeReportTab])
 
   const fetchOptions = async () => {

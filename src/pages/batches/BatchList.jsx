@@ -41,7 +41,24 @@ export default function BatchList() {
   const [cancellingClass, setCancellingClass] = useState(false)
 
   useEffect(() => {
-    if (instituteId) fetchAll()
+    if (instituteId) {
+      fetchAll()
+
+      const channel = supabase
+        .channel('batches-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'batches', filter: `institute_id=eq.${instituteId}` },
+          () => {
+            fetchAll()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
   }, [instituteId])
 
   const fetchAll = async () => {

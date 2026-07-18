@@ -35,6 +35,21 @@ export default function StudentList() {
   useEffect(() => {
     if (instituteId) {
       fetchStudentsAndData()
+
+      const channel = supabase
+        .channel('students-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'students', filter: `institute_id=eq.${instituteId}` },
+          () => {
+            fetchStudentsAndData()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
   }, [instituteId])
 
