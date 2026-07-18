@@ -20,6 +20,21 @@ export default function Layout() {
   const { inAppNotifs, unreadCount, markAllRead } = useInAppNotifications()
   const navigate = useNavigate()
   const location = useLocation()
+  const [isLandscape, setIsLandscape] = useState(false)
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const landscape = window.innerWidth > window.innerHeight && window.innerWidth < 1024
+      setIsLandscape(landscape)
+    }
+    checkOrientation()
+    window.addEventListener('resize', checkOrientation)
+    window.addEventListener('orientationchange', checkOrientation)
+    return () => {
+      window.removeEventListener('resize', checkOrientation)
+      window.removeEventListener('orientationchange', checkOrientation)
+    }
+  }, [])
 
   // Bug & Issue Reporting states
   const [showBugModal, setShowBugModal] = useState(false)
@@ -407,6 +422,21 @@ export default function Layout() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        
+        {isLandscape && (
+          <div className="fixed inset-0 z-[9999] bg-[#1E3A8A] text-white flex flex-col items-center justify-center p-6 text-center space-y-6">
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <div className="w-12 h-20 border-4 border-white rounded-2xl animate-spin" style={{ animationDuration: '3s' }} />
+              <span className="absolute text-xl">🔄</span>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-extrabold tracking-tight">Portrait Mode Required</h2>
+              <p className="text-sm text-blue-200 max-w-xs mx-auto">
+                Batch Desk is optimized for portrait layout. Please rotate your phone to portrait view to continue.
+              </p>
             </div>
           </div>
         )}
