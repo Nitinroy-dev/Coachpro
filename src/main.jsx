@@ -71,3 +71,21 @@ function showUpdateBanner() {
   `
   document.body.prepend(banner)
 }
+
+// Proactively force portrait orientation lock on mobile/PWA instances
+function lockScreenOrientation() {
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === 'function') {
+      screen.orientation.lock('portrait-primary').catch(() => {
+        // Safe fallback if browser rejects orientation locking outside fullscreen
+      })
+    }
+  } catch (e) {
+    // Unsupported browser
+  }
+}
+
+lockScreenOrientation()
+window.addEventListener('resize', lockScreenOrientation)
+window.addEventListener('orientationchange', lockScreenOrientation)
+window.addEventListener('load', lockScreenOrientation)
