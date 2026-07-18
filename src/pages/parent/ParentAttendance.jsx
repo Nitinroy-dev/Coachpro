@@ -86,7 +86,8 @@ export default function ParentAttendance() {
     present: { label: 'Present', color: 'bg-green-500 text-white border-green-600' },
     absent: { label: 'Absent', color: 'bg-red-500 text-white border-red-600' },
     late: { label: 'Late', color: 'bg-yellow-500 text-gray-900 border-yellow-600' },
-    holiday: { label: 'Holiday', color: 'bg-indigo-500 text-white border-indigo-600' }
+    holiday: { label: 'Holiday', color: 'bg-indigo-500 text-white border-indigo-600' },
+    cancelled: { label: 'Cancelled', color: 'bg-gray-500 text-white border-gray-600' }
   }
 
   if (loading) {
@@ -206,6 +207,7 @@ export default function ParentAttendance() {
           <span className="flex items-center gap-1.5">🔴 Absent</span>
           <span className="flex items-center gap-1.5">🟡 Late</span>
           <span className="flex items-center gap-1.5">⚫ Holiday</span>
+          <span className="flex items-center gap-1.5">⚪ Cancelled</span>
         </div>
       </Card>
     </div>

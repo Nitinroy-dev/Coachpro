@@ -92,7 +92,8 @@ export default function StudentAttendance() {
     present: { label: 'Present', color: 'bg-green-500 text-white border-green-600', dot: '🟢' },
     absent: { label: 'Absent', color: 'bg-red-500 text-white border-red-600', dot: '🔴' },
     late: { label: 'Late', color: 'bg-yellow-500 text-gray-900 border-yellow-600', dot: '🟡' },
-    holiday: { label: 'Holiday', color: 'bg-indigo-500 text-white border-indigo-600', dot: '⚫' }
+    holiday: { label: 'Holiday', color: 'bg-indigo-500 text-white border-indigo-600', dot: '⚫' },
+    cancelled: { label: 'Cancelled', color: 'bg-gray-500 text-white border-gray-600', dot: '⚪' }
   }
 
   if (loading) {
@@ -203,6 +204,7 @@ export default function StudentAttendance() {
           <span className="flex items-center gap-1.5">🔴 Absent</span>
           <span className="flex items-center gap-1.5">🟡 Late</span>
           <span className="flex items-center gap-1.5">⚫ Holiday</span>
+          <span className="flex items-center gap-1.5">⚪ Cancelled</span>
         </div>
       </Card>
     </div>

@@ -17,7 +17,7 @@ BEGIN
   END IF;
 
   -- Insert/update on holiday or cancellation
-  IF NEW.event_type IN ('cancelled', 'holiday') THEN
+  IF NEW.event_type = 'holiday' THEN
     IF NEW.batch_id IS NOT NULL THEN
       -- Mark holiday for all active students in this batch
       INSERT INTO public.attendance (student_id, batch_id, institute_id, date, status)
@@ -34,6 +34,24 @@ BEGIN
       WHERE s.institute_id = NEW.institute_id AND s.status = 'active'
       ON CONFLICT (student_id, date) 
       DO UPDATE SET status = 'holiday';
+    END IF;
+  ELSIF NEW.event_type = 'cancelled' THEN
+    IF NEW.batch_id IS NOT NULL THEN
+      -- Mark cancelled for all active students in this batch
+      INSERT INTO public.attendance (student_id, batch_id, institute_id, date, status)
+      SELECT s.id, s.batch_id, s.institute_id, NEW.event_date, 'cancelled'
+      FROM public.students s
+      WHERE s.batch_id = NEW.batch_id AND s.status = 'active'
+      ON CONFLICT (student_id, date) 
+      DO UPDATE SET status = 'cancelled';
+    ELSE
+      -- Mark cancelled for all active students in the institute
+      INSERT INTO public.attendance (student_id, batch_id, institute_id, date, status)
+      SELECT s.id, s.batch_id, s.institute_id, NEW.event_date, 'cancelled'
+      FROM public.students s
+      WHERE s.institute_id = NEW.institute_id AND s.status = 'active'
+      ON CONFLICT (student_id, date) 
+      DO UPDATE SET status = 'cancelled';
     END IF;
   ELSE
     -- If an event was changed from 'cancelled'/'holiday' to something else, remove the auto-marked holidays
