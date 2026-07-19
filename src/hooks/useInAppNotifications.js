@@ -45,58 +45,55 @@ export async function requestNotificationPermission() {
 
 /**
  * Fire a native OS / phone-panel notification.
- *
- * Strategy (most → least reliable):
- * 1. Post a SHOW_NOTIFICATION message to the active Service Worker.
- *    The SW's message handler calls showNotification() — this reliably
- *    appears in the Android system notification shade for both browser tabs
- *    and installed PWAs.
- * 2. If no SW controller, call reg.showNotification() directly.
- * 3. If no SW at all, fall back to the Notification constructor (desktop).
  */
-async function fireNativeNotification(title, body, url = '/notifications') {
-  if (!('Notification' in window)) return
-  if (Notification.permission !== 'granted') return
+export async function fireNativeNotification(title, body, url = '/notifications') {
+  if (!('Notification' in window)) return 'unsupported'
+  if (Notification.permission !== 'granted') {
+    console.warn('Notification permission not granted:', Notification.permission)
+    return 'no_permission'
+  }
+
+  const cleanTitle = title || 'Batch Desk'
+  const cleanBody = (body || 'You have a new notification').slice(0, 200)
+  const cleanUrl = url || '/notifications'
+
+  const options = {
+    body: cleanBody,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-96.png',
+    tag: `batchdesk-${Date.now()}`,
+    renotify: true,
+    data: { url: cleanUrl },
+    vibrate: [200, 100, 200],
+  }
 
   try {
     if ('serviceWorker' in navigator) {
-      // Wait for the service worker to be ready
       const reg = await navigator.serviceWorker.ready
-
-      // Preferred: send a message to the SW — it fires showNotification() from inside the SW context
-      // This is more reliable on Android Chrome than calling reg.showNotification() from page JS
+      if (reg && reg.showNotification) {
+        await reg.showNotification(cleanTitle, options)
+      }
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: 'SHOW_NOTIFICATION',
-          title: title || 'Batch Desk',
-          body: (body || 'You have a new notification').slice(0, 200),
-          url: url || '/notifications',
-        })
-      } else {
-        // SW is ready but not yet controlling this tab — call directly
-        await reg.showNotification(title || 'Batch Desk', {
-          body: (body || 'You have a new notification').slice(0, 200),
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-96.png',
-          tag: `batchdesk-notif-${Date.now()}`,
-          renotify: true,
-          data: { url: url || '/notifications' },
-          vibrate: [200, 100, 200],
+          title: cleanTitle,
+          body: cleanBody,
+          url: cleanUrl,
         })
       }
+      return 'success'
     } else {
-      // Desktop fallback — no service worker
-      new Notification(title || 'Batch Desk', {
-        body: (body || 'You have a new notification').slice(0, 200),
-        icon: '/icons/icon-192.png',
-      })
+      new Notification(cleanTitle, options)
+      return 'success'
     }
   } catch (e) {
     console.warn('Native notification error:', e)
-    // Last resort fallback
     try {
-      new Notification(title || 'Batch Desk', { body: body || '' })
-    } catch (_) { /* silent */ }
+      new Notification(cleanTitle, { body: cleanBody, icon: '/icons/icon-192.png' })
+      return 'success_fallback'
+    } catch (_) {
+      return 'failed'
+    }
   }
 }
 
@@ -110,7 +107,7 @@ export function useInAppNotifications() {
   const [unreadCount, setUnreadCount] = useState(0)
   const channelRef = useRef(null)
 
-  // Request OS notification permission once on mount
+  // Request OS notification permission once on mount if available
   useEffect(() => {
     requestNotificationPermission()
   }, [])
@@ -171,7 +168,7 @@ export function useInAppNotifications() {
       .from('notifications')
       .select('id, type, message, status, created_at, student_id')
       .eq('institute_id', instituteId)
-      .in('status', ['pending', 'sent'])
+      .neq('status', 'read')
       .order('created_at', { ascending: false })
       .limit(30)
 
@@ -223,7 +220,7 @@ export function useInAppNotifications() {
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `institute_id=eq.${instituteId}` },
         (payload) => {
           const n = payload.new
-          if (n.status !== 'pending' && n.status !== 'sent') return
+          if (n.status === 'read' || n.status === 'failed') return
 
           // Permission checks using Refs to avoid tearing down hook
           if (profile?.role === 'student' && n.student_id !== profile.id) return

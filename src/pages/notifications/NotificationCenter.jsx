@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Send, Filter, Search, User, Layers, Info, Calendar, Download, Trash2, ShieldAlert, Lock, AlertCircle } from 'lucide-react'
+import { Bell, Send, Filter, Search, User, Layers, Info, Calendar, Download, Trash2, ShieldAlert, Lock, AlertCircle, BellRing } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { sendWhatsAppMessage } from '../../lib/wati'
+import { fireNativeNotification, requestNotificationPermission } from '../../hooks/useInAppNotifications'
 import Card, { CardHeader, CardTitle } from '../../components/ui/Card'
 import Badge, { StatusBadge } from '../../components/ui/Badge'
 import Select from '../../components/ui/Select'
@@ -26,6 +27,33 @@ export default function NotificationCenter() {
   const [actionLoading, setActionLoading] = useState(false)
   const [parentStudentId, setParentStudentId] = useState(null)
   const [parentChecked, setParentChecked] = useState(false)
+
+  // Notification Permission state for Phone System Panel
+  const [notifPermission, setNotifPermission] = useState('Notification' in window ? Notification.permission : 'unsupported')
+  const [showHelpModal, setShowHelpModal] = useState(false)
+
+  const handleTestNotification = async () => {
+    const res = await requestNotificationPermission()
+    const currentStatus = 'Notification' in window ? Notification.permission : 'unsupported'
+    setNotifPermission(currentStatus)
+
+    if (res === 'granted' || currentStatus === 'granted') {
+      const result = await fireNativeNotification(
+        'Batch Desk System Test 🔔',
+        '🎉 Phone panel notifications are working on your device!'
+      )
+      if (result === 'success' || result === 'success_fallback') {
+        toast.success('Test notification sent! Check your phone notification panel.')
+      } else {
+        toast.warning('Permission granted, but phone notification return: ' + result)
+      }
+    } else if (res === 'denied' || currentStatus === 'denied') {
+      toast.error('Notification permission is blocked by your browser.')
+      setShowHelpModal(true)
+    } else {
+      toast.warning('Browser notification permission was not granted.')
+    }
+  }
 
   // Send message form states
   const [target, setTarget] = useState('individual') // individual | batch | all
@@ -486,6 +514,31 @@ export default function NotificationCenter() {
           </div>
         </div>
 
+        {/* Phone Panel Notification Test Bar */}
+        <div className="flex flex-wrap items-center gap-3 bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 p-3.5 rounded-2xl border border-blue-100 shadow-2xs">
+          <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+            <BellRing size={16} className="text-[#1E3A8A]" />
+            <span>Phone Panel Alerts Status:</span>
+            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+              notifPermission === 'granted' ? 'bg-green-100 text-green-700 border border-green-200' :
+              notifPermission === 'denied' ? 'bg-red-100 text-red-700 border border-red-200' :
+              'bg-amber-100 text-amber-700 border border-amber-200'
+            }`}>
+              {notifPermission === 'granted' ? '🟢 Active' : notifPermission === 'denied' ? '🔴 Blocked' : '🟡 Click to Enable'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            {notifPermission === 'denied' && (
+              <Button size="xs" variant="outline" onClick={() => setShowHelpModal(true)} className="bg-white text-red-600 border-red-200 text-xs font-bold">
+                How to Unblock ⚙️
+              </Button>
+            )}
+            <Button size="xs" variant="accent" icon={BellRing} onClick={handleTestNotification} className="text-xs shadow-xs font-bold">
+              {notifPermission === 'granted' ? 'Send Test Notification 🔔' : 'Enable Phone Notifications 🔔'}
+            </Button>
+          </div>
+        </div>
+
         {/* Notifications Feed */}
         <Card className="p-5">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3 gap-3 mb-4">
@@ -771,6 +824,31 @@ export default function NotificationCenter() {
         </Card>
       </div>
 
+      {/* Phone Panel Notification Test Bar */}
+      <div className="flex flex-wrap items-center gap-3 bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 p-3.5 rounded-2xl border border-blue-100 shadow-2xs">
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+          <BellRing size={16} className="text-[#1E3A8A]" />
+          <span>Phone Panel Alerts Status:</span>
+          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+            notifPermission === 'granted' ? 'bg-green-100 text-green-700 border border-green-200' :
+            notifPermission === 'denied' ? 'bg-red-100 text-red-700 border border-red-200' :
+            'bg-amber-100 text-amber-700 border border-amber-200'
+          }`}>
+            {notifPermission === 'granted' ? '🟢 Active' : notifPermission === 'denied' ? '🔴 Blocked' : '🟡 Click to Enable'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          {notifPermission === 'denied' && (
+            <Button size="xs" variant="outline" onClick={() => setShowHelpModal(true)} className="bg-white text-red-600 border-red-200 text-xs font-bold">
+              How to Unblock ⚙️
+            </Button>
+          )}
+          <Button size="xs" variant="accent" icon={BellRing} onClick={handleTestNotification} className="text-xs shadow-xs font-bold">
+            {notifPermission === 'granted' ? 'Send Test Notification 🔔' : 'Enable Phone Notifications 🔔'}
+          </Button>
+        </div>
+      </div>
+
       {/* Lower Section: Tabs, Filters, and Table Log */}
       <Card className="p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 gap-3">
@@ -886,6 +964,44 @@ export default function NotificationCenter() {
           </table>
         </div>
       </Card>
+
+      {/* Help Modal for Unblocking Notifications */}
+      {showHelpModal && (
+        <Modal isOpen={true} onClose={() => setShowHelpModal(false)} title="Enable Phone Panel Notifications" size="md">
+          <div className="space-y-4 text-xs text-gray-700">
+            <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl space-y-1">
+              <p className="font-extrabold text-amber-900 text-sm">Notifications are restricted or blocked</p>
+              <p className="text-amber-800 opacity-90">Follow these simple instructions to allow phone panel alerts:</p>
+            </div>
+
+            <div className="space-y-3 font-medium">
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1.5">
+                <p className="font-extrabold text-gray-900">📱 Android (Chrome / Edge / Installed PWA):</p>
+                <ol className="list-decimal list-inside space-y-1 text-gray-600">
+                  <li>Tap the <strong>Lock 🔒 or Tune icon</strong> in the browser address bar at top.</li>
+                  <li>Tap <strong>Permissions</strong> or <strong>Site settings</strong>.</li>
+                  <li>Tap <strong>Notifications</strong> and select <strong>Allow</strong>.</li>
+                  <li>Go to Android Settings → Apps → Chrome → Notifications → Turn ON all toggles.</li>
+                </ol>
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1.5">
+                <p className="font-extrabold text-gray-900">🍎 iPhone / iPad (iOS Safari):</p>
+                <ol className="list-decimal list-inside space-y-1 text-gray-600">
+                  <li>Apple iOS requires adding this website to your Home Screen!</li>
+                  <li>Tap the <strong>Share button</strong> in Safari menu.</li>
+                  <li>Tap <strong>"Add to Home Screen"</strong>.</li>
+                  <li>Open the installed Batch Desk app from your Home Screen, then tap "Enable Notifications".</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="pt-2 text-right">
+              <Button variant="accent" onClick={() => setShowHelpModal(false)}>Got It</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
